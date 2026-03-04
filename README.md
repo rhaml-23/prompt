@@ -6,8 +6,6 @@ A portable, LLM-powered professional operating system for compliance and securit
 
 **Runs on:** Any capable LLM (Claude, Gemini, GPT, local Ollama models) + Python 3.9+
 
-**Indexed by:** Archivist — all engine and function specs carry YAML frontmatter for automatic discovery and tagging.
-
 ---
 
 ## Table of Contents
