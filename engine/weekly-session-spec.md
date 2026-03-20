@@ -17,31 +17,21 @@ outputs:
   - session_close_summary
   - staged_deliverables
   - updated_session_memory
-governed_by: /constitution.md
+governed_by: config/constitution.md
 standalone: true
 entry_point: true
 depends_on:
-  - session-init-spec.md
-  - program-pipeline-orchestrator.md
-  - program-comms-spec.md
-  - quality-gate-spec.md
+  - engine/session-init-spec.md
+  - engine/program-pipeline-orchestrator.md
+  - functions/program-comms-spec.md
+  - engine/quality-gate-spec.md
 ---
 
 # Weekly Session Spec
 **Version:** 1.0  
 **Purpose:** Defines the structure and behavior of a focused weekly work session. Opens with a memory-informed agenda proposal, runs work with pattern detection and values alignment active, closes with a summary and staged deliverables.  
-**Governed by:** `/constitution.md`  
+**Governed by:** `config/constitution.md`  
 **Typical duration:** 1–3 hours  
-
----
-
-## Constitutional Guidance
-
-Three articles are especially active in a weekly session:
-
-- **IV.8 Surface drift** — the session open is the primary opportunity to name patterns the principal cannot see from inside individual tasks. Do not save this for the end.
-- **IV.9 Push back on values drift** — when session work produces a decision or action inconsistent with the principal's prior positions, name it before executing.
-- **V.2 Never suppress a risk to preserve comfort** — a weekly session has a social texture that can create pressure to stay positive or avoid difficult topics. The constitution overrides that pressure.
 
 ---
 
@@ -58,6 +48,16 @@ If a memory file does not exist for a program, note it and create a blank one fr
 ### Step 2 — Pattern scan
 
 Before proposing anything, scan across all memory files for:
+
+**External intel items** — any items from a recent intel scan staged for the agenda:
+```
+[INTEL] [n] external findings staged since last session:
+  [Critical/High] [finding title] — [program] — [recommended action]
+```
+If no scan has run since the last session and more than 14 days have passed, note it:
+```
+[INTEL] No external scan in [n] days. Consider running one before or after this session.
+```
 
 **Deferred item aging** — any item deferred 3+ times:
 ```
@@ -80,8 +80,6 @@ Last stated reason: "[reason]". Worth addressing today or explicitly closing.
 [PATTERN] No pipeline run recorded for "[program]" in [n] days.
 Recommended cadence was [cadence].
 ```
-
-Patterns are not accusations. State them factually. The principal decides what to do with them.
 
 ### Step 3 — Propose agenda
 
@@ -122,8 +120,6 @@ Rules for agenda proposal:
 
 ## Session Work Mode
 
-Once the agenda is approved, work through items in order.
-
 ### Active behaviors during work
 
 **Values alignment check** — before executing any significant output, briefly cross-reference with the decision log in session memory. If the current action contradicts a prior decision, flag it:
@@ -144,13 +140,9 @@ Do not batch outputs at the end. Stage as you go.
 Options: push through, defer [item], or end here with a clean close.
 ```
 
-The principal decides. Do not silently run over or silently cut work.
-
 ---
 
 ## Session Close
-
-When the principal signals they are done, or when the agenda is complete, execute the close sequence.
 
 ### Step 1 — Compile session summary
 
@@ -199,7 +191,7 @@ Everything in "ready to send" is flagged for one-way door review. Nothing goes o
 
 ### Step 3 — Write session memory
 
-Append to `/memory/[program_slug]-memory.md` for each program touched this session:
+Append to `memory/[program_slug]-memory.md` for each program touched this session:
 
 ```markdown
 ### [YYYY-MM-DD]
@@ -230,50 +222,12 @@ For each deliverable produced this session, write a provenance log entry.
 Session logged. Deliverables staged.
 
 Next session I'd suggest starting with: [top priority from memory]
-
-Good work today.
 ```
-
-One sentence of acknowledgment is enough. Not a celebration — a clean handoff.
 
 ---
-
-## Tone for Weekly Sessions
-
-A weekly session has a different texture than an ad-hoc task. The agent should feel less like a command line and more like a working session with a trusted colleague.
-
-This means:
-- Conversational transitions between agenda items — not mechanical prompts
-- Willingness to think out loud when something is ambiguous rather than immediately producing output
-- Directness when something looks wrong — not softened, but not clinical either
-- Brevity when the principal is clearly in flow — don't interrupt momentum with unnecessary confirmations
-
-It does not mean:
-- Artificial warmth or filler phrases
-- Enthusiasm about tasks
-- Padding session open or close with pleasantries
-- Pretending uncertainty doesn't exist
-
-The session should feel like working alongside someone who is competent, honest, and cares about getting it right — not like interacting with a product.
-
----
-
-## Suggested Repo Structure Addition
-
-```
-/memory/
-  [program_slug]-memory.md      ← one per active program
-  cross-program-memory.md       ← optional: patterns that cut across programs
-```
-
-Memory files are git-tracked. They are the agent's long-term context. Treat them as first-class artifacts.
-
-## Suggested Repo Path
-
-`/specs/weekly-session-spec.md`
 
 ## Companion Specs
-- Governed by: `/constitution.md`
-- Reads: `/memory/*.md`, `/runs/*/latest.json`, `/logs/provenance.jsonl`
-- Invokes: `program-pipeline-orchestrator.md`, `program-comms-spec.md`, `quality-gate-spec.md`
-- Writes: `/memory/*.md`, `/logs/provenance.jsonl`, `/drafts/`, `/runs/`
+- Governed by: `config/constitution.md`
+- Reads: `memory/*.md`, `runs/*/latest.json`, `logs/provenance.jsonl`
+- Invokes: `engine/program-pipeline-orchestrator.md`, `functions/program-comms-spec.md`, `engine/quality-gate-spec.md`
+- Writes: `memory/*.md`, `logs/provenance.jsonl`, `drafts/`, `runs/`
