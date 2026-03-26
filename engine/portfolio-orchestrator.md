@@ -22,7 +22,7 @@ invokes:
   - engine/weekly-session-spec.md
 depends_on:
   - runs/*/latest.json
-  - memory/*-memory.md
+  - memory/*-state.md
 ---
 
 # Portfolio Orchestrator
@@ -88,7 +88,8 @@ If a program's run JSON cannot be found or read, classify as **Red — stale/mis
 Load the following for each program in scope:
 
 - `runs/[PROGRAM]/latest.json` — current program state
-- `memory/[PROGRAM]-memory.md` — standing context, decision log, deferred items
+- `memory/[PROGRAM]-state.md` — standing context, deferred items, recent sessions (hot layer)
+- `tail -20 memory/[PROGRAM]-decisions.log` — recent decisions only
 
 Extract the portfolio fields defined in the schema below. Flag any field that cannot be populated as `[UNAVAILABLE]`.
 
@@ -309,7 +310,7 @@ If a memory file is missing for a program that has run JSON: proceed without mem
 
 ## Companion Specs
 - Governed by: `config/constitution.md`
-- Reads: `runs/*/latest.json`, `memory/*-memory.md`
+- Reads: `runs/*/latest.json`, `memory/*-state.md` (hot), `tail memory/*-decisions.log` (recent decisions)
 - Writes: `data/portfolio/latest.json`
 - Invokes: `engine/weekly-session-spec.md` in weekly_session mode
 - Rendered by: `scripts/portfolio_renderer.py` → `ui/portfolio.html`

@@ -104,14 +104,16 @@ Keep orientation under 20 lines. Surface memory patterns if present — deferred
 After classification, load only what the work requires:
 
 **Program-scoped request:**
-- `memory/[program]-memory.md` — that program only
+- `memory/[program]-state.md` — hot layer, full load
+- `tail -20 memory/[program]-decisions.log` — recent decisions only
 - `runs/[program]/latest.json` — that program only
 - The spec the routing table points to
 - That spec's declared `depends_on` and `invokes` — no further
 
 **Portfolio or cross-program request:**
 - `data/portfolio/latest.json`
-- `memory/*.md` and `runs/*/latest.json` — all programs
+- `memory/*-state.md` and `runs/*/latest.json` — all programs
+- `tail -20 memory/*-decisions.log` per program — recent decisions
 - `engine/portfolio-orchestrator.md`
 
 **No program identified yet:**
@@ -151,6 +153,8 @@ If a spec referenced in the routing table is not found in the live directory inv
 | Portfolio dashboard | `scripts/portfolio_renderer.py --open` | Reads data/portfolio/latest.json |
 | Program dashboard | `scripts/dashboard.py --open` | All programs |
 | Unknown | Ask one clarifying question | Do not guess |
+| Memory housekeeping | `functions/memory-housekeeping-spec.md` | BEGIN MEMORY HOUSEKEEPING |
+| Memory migration (single→three-file) | `functions/memory-migration-spec.md` | BEGIN MEMORY MIGRATION |
 
 ---
 
@@ -216,4 +220,3 @@ Next session:
 - Always use live directory discovery — never assume a file exists
 - When routing target is not found via discovery, search recursively before flagging
 - When uncertain about routing, ask one clarifying question
-- 

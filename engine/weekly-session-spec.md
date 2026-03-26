@@ -39,15 +39,16 @@ depends_on:
 
 ### Step 1 — Load memory
 
-Read for every active program:
-- `/memory/[program_slug]-memory.md` — full file
+Read for the active program:
+- `memory/[program_slug]-state.md` — full file (hot layer)
+- `tail -20 memory/[program_slug]-decisions.log` — recent decisions only
 - `/runs/[program_slug]/latest.json` — program_state and decision_queue only
 
-If a memory file does not exist for a program, note it and create a blank one from the template at session close.
+If `memory/[program_slug]-state.md` does not exist, note it and create from `memory/program-state-template.md` at session close. Also create `memory/[program_slug]-decisions.log` from template.
 
 ### Step 2 — Pattern scan
 
-Before proposing anything, scan across all memory files for:
+Before proposing anything, scan the state file and tail the decisions log for:
 
 **External intel items** — any items from a recent intel scan staged for the agenda:
 ```
@@ -122,7 +123,7 @@ Rules for agenda proposal:
 
 ### Active behaviors during work
 
-**Values alignment check** — before executing any significant output, briefly cross-reference with the decision log in session memory. If the current action contradicts a prior decision, flag it:
+**Values alignment check** — before executing any significant output, briefly cross-reference with the decisions log (`tail -50 memory/[program]-decisions.log`). If the current action contradicts a prior decision, flag it:
 ```
 [VALUES CHECK] This would [action]. In [prior session] you decided [prior decision].
 These are in tension. Proceed as directed or revisit the prior decision?
@@ -191,7 +192,7 @@ Everything in "ready to send" is flagged for one-way door review. Nothing goes o
 
 ### Step 3 — Write session memory
 
-Append to `memory/[program_slug]-memory.md` for each program touched this session:
+Append to `memory/[program_slug]-state.md` Recent Sessions section for each program touched this session. Also write qualifying events to `memory/[program_slug]-decisions.log`:
 
 ```markdown
 ### [YYYY-MM-DD]
@@ -230,4 +231,5 @@ Next session I'd suggest starting with: [top priority from memory]
 - Governed by: `config/constitution.md`
 - Reads: `memory/*.md`, `runs/*/latest.json`, `logs/provenance.jsonl`
 - Invokes: `engine/program-pipeline-orchestrator.md`, `functions/program-comms-spec.md`, `engine/quality-gate-spec.md`
-- Writes: `memory/*.md`, `logs/provenance.jsonl`, `drafts/`, `runs/`
+- Writes: `memory/*-state.md` (append sessions), `memory/*-decisions.log` (append events), `logs/provenance.jsonl`, `drafts/`, `runs/`
+- 
