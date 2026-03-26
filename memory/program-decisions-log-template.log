@@ -1,0 +1,21 @@
+# [PROGRAM_NAME] Decisions Log
+# Slug: [program-slug]
+# Created: [YYYY-MM-DD]
+# Format: YYYY-MM-DD | TYPE | DESCRIPTION | CONTEXT
+# Types: DECISION | RISK_ACCEPTED | ONE_WAY_DOOR | ESCALATED
+#
+# RULES:
+# - Append only. Never modify or delete existing entries.
+# - One event per line. No line wrapping — keep descriptions concise.
+# - This file is queried, not fully loaded. grep-friendly by design.
+# - DECISION: any direction set by the principal that governs future action
+# - RISK_ACCEPTED: explicit acceptance of a named risk — requires principal sign-off
+# - ONE_WAY_DOOR: any irreversible action taken — external comms, contractual, reputational
+# - ESCALATED: items escalated and how they were resolved
+#
+# QUERY EXAMPLES:
+#   All decisions:              grep "^[0-9].*DECISION" [program]-decisions.log
+#   All accepted risks:         grep "RISK_ACCEPTED" [program]-decisions.log
+#   One-way doors this year:    grep "^2026.*ONE_WAY_DOOR" [program]-decisions.log
+#   Unresolved escalations:     grep "ESCALATED|UNRESOLVED" [program]-decisions.log
+#
