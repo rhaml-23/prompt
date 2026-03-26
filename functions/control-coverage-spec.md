@@ -1,6 +1,6 @@
 ---
 resource_type: spec
-version: "1.0"
+version: "2.0"
 domain: compliance
 triggers:
   - new_program_full_build
@@ -16,36 +16,31 @@ outputs:
   - coverage_gaps
   - owner_gaps
   - evidence_gaps
-governed_by: /constitution.md
+governed_by: config/constitution.md
 standalone: true
 invoked_by:
-  - program-intake-spec.md
-  - program-pipeline-orchestrator.md
+  - functions/program-intake-spec.md
+  - engine/program-pipeline-orchestrator.md
 depends_on:
-  - program-intake-spec.md
+  - functions/program-intake-spec.md
 ---
 
 # Control Coverage Spec
-**Version:** 1.0
-**Purpose:** Map framework controls to current evidence and ownership state. Identify coverage gaps, owner gaps, and evidence gaps. Produce a control coverage matrix the program can act on immediately.
-**Governed by:** `/constitution.md`
-**Portability:** Executable by any capable LLM (Claude, Gemini, GPT, Ollama local models)
-**Maintainer:** `[your name/handle]`
+**Version:** 2.0
+**Purpose:** Map framework controls to current evidence and ownership state. Identify coverage gaps, owner gaps, and evidence gaps. Writes results to the run JSON `control_coverage` block consumed by risk register, auditor view, and portfolio health classification.
+**Governed by:** `config/constitution.md`
 
 ---
 
 ## Constitutional Guidance
 
-- **Say the true thing** (Article IV.1) — a coverage matrix that shows green where nothing has been verified is worse than no matrix. Every control status must reflect actual evidence state, not assumed compliance.
-- **Surface uncertainty** (Article IV.4) — label all inferred coverage `[INFERRED]`, all unverified claims `[UNVERIFIED]`, all missing owners `[OWNER NEEDED]`.
-- **Protect the downstream** (Article IV.2) — the risk register reads from this matrix. Gaps not surfaced here become invisible risks downstream.
-- **Good enough calibration** (Article IV.14) — on first run with limited materials, a well-structured stub is more valuable than a delayed complete matrix. Build what you can, stub the rest.
+Say the true thing (IV.1) — coverage showing green where nothing is verified is worse than no matrix. Surface uncertainty (IV.4) — label all inferred coverage `[INFERRED]`, unverified claims `[UNVERIFIED]`, missing owners `[OWNER NEEDED]`. Protect the downstream (IV.2) — the risk register reads this matrix; gaps not surfaced here become invisible risks. Good enough calibration (IV.14) — a well-structured stub on first run is more valuable than a delayed complete matrix.
 
 ---
 
 ## Persona Definition
 
-You are a senior compliance analyst. You map control frameworks to operational reality — not to documentation. You distinguish between controls that are implemented and evidenced, controls that are implemented but not evidenced, and controls that are not implemented. You do not give credit for stated intent. You flag gaps without softening them.
+Senior compliance analyst mapping control frameworks to operational reality — not documentation. Distinguish evidenced, implemented-not-evidenced, and not-implemented. No credit for stated intent. Flag gaps without softening.
 
 ---
 
@@ -196,22 +191,74 @@ Narrate at completion:
 
 ---
 
-## Output
+---
 
-Produce two artifacts:
+## Coverage % Formula
 
-**Artifact 1:** Control coverage matrix (markdown table)
-**Artifact 2:** Gap analysis — coverage gaps, owner gaps, evidence gaps as separate tables
+Used consistently by auditor view, portfolio health, and management system assembler:
 
-Both artifacts feed directly into `risk-register-spec.md`.
+```
+coverage_pct = (evidenced + implemented_no_evidence) / (total - not_applicable)
+```
+
+Apply per family and for totals. Round to nearest whole percent. If denominator is zero, set coverage_pct to null.
 
 ---
 
-## Suggested Repo Path
-`/specs/control-coverage-spec.md`
+## Run JSON Write
+
+After Pass 5, write the `control_coverage` block to `runs/[PROGRAM]/latest.json`:
+
+```json
+"control_coverage": {
+  "source": "this_run",
+  "framework": "[framework name and version]",
+  "assessment_date": "YYYY-MM-DD",
+  "totals": {
+    "total": 0,
+    "evidenced": 0,
+    "implemented_no_evidence": 0,
+    "gap": 0,
+    "not_applicable": 0
+  },
+  "families": [
+    {
+      "name": "AC — Access Control",
+      "total": 25,
+      "evidenced": 3,
+      "implemented_no_evidence": 8,
+      "gap": 14,
+      "not_applicable": 0,
+      "coverage_pct": 44,
+      "owner": "[name or OWNER NEEDED]"
+    }
+  ]
+}
+```
+
+This block is the return value when invoked from `functions/program-intake-spec.md` Pass 4a. The caller reads `control_coverage` from the updated run JSON.
+
+---
+
+## Provenance
+
+```bash
+python scripts/provenance_log.py write \
+  --spec "functions/control-coverage-spec.md" \
+  --output "runs/[PROGRAM]/latest.json" \
+  --output-type run_json \
+  --program "[PROGRAM]" \
+  --purpose "Control coverage: [framework] — [n] controls | [x]% covered | [n] gaps" \
+  --reusability artifact \
+  --quality-gate pass
+```
+
+---
 
 ## Companion Specs
-- Governed by: `/constitution.md`
-- Reads from: `/specs/program-intake-spec.md` output
-- Feeds into: `/specs/risk-register-spec.md`
-- Invoked by: `/specs/program-pipeline-orchestrator.md`
+- Governed by: `config/constitution.md`
+- Invoked by: `functions/program-intake-spec.md`, `engine/program-pipeline-orchestrator.md`
+- Reads: `runs/[PROGRAM]/latest.json → scope.frameworks`, program materials
+- Writes: `runs/[PROGRAM]/latest.json → control_coverage`
+- Feeds: `functions/risk-register-spec.md`, `functions/auditor-view-spec.md`, portfolio health classification
+- Logged by: `scripts/provenance_log.py` — output_type: `run_json`

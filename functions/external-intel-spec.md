@@ -62,7 +62,7 @@ PROGRAMS:         [all | specific program slugs]
 OUTPUT_FORMAT:    [markdown | json | both]
 ```
 
-If `PROGRAMS: all`, load context from all `memory/[program]-memory.md` files and `runs/*/latest.json`. If specific programs are named, load only those.
+If `PROGRAMS: all`, load `memory/[program]-state.md` and `runs/*/latest.json` for all programs. If specific programs are named, load only those. Query decisions log via grep rather than full load.
 
 ---
 
