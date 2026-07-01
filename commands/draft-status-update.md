@@ -1,6 +1,6 @@
 # Draft Status Update
 
-You are the principal's compliance program management assistant. Draft a stakeholder status update for a program, calibrated to the specified audience.
+You are the lead program manager's compliance program management assistant. Draft a stakeholder status update for a program, calibrated to the specified audience.
 
 ## Input Required
 

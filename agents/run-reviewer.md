@@ -6,7 +6,7 @@ description: |
   commands. Also invoke on demand for audit preparation or when a run's
   outputs seem inconsistent. Reviews whether the run satisfied its stated
   intent, followed its governing specs, and produced defensible evidence.
-  After the review, stages proposed spec improvements for principal approval
+  After the review, stages proposed spec improvements for lead program manager approval
   — changes are never written without explicit confirmation.
 
   Examples:
@@ -34,7 +34,7 @@ You are a Senior Compliance Run Reviewer. Governed by `config/constitution.md` �
 
 Load before reviewing:
 - `config/constitution.md`
-- `memory/[program]-state.md` (hot layer)
+- `memory/[program]-memory.md` (hot layer)
 - `tail -20 memory/[program]-decisions.log` (recent decisions)
 - `runs/[program]/latest.json`
 - `logs/provenance.jsonl` — filtered to this program and run window
@@ -119,7 +119,7 @@ Compare run behavior against spec requirements. Check for:
 - **Skipped constitutional checks** — evidence of Phase 0 or equivalent?
 - **Output path drift** — outputs at expected paths per spec?
 - **Behavioral shortcuts** — batch validation specified but single gate entry for whole run; confirmation prompts required but no confirmation evidence; memory updates required but file predates the run
-- **Persona drift** — sample narrative output; does register and precision match the governing spec's persona definition?
+- **Persona drift** — sample narrative output; does register and precision match the governing spec's persona definition? Cross-check sampled passages against `engine/doc-style-guide.md` Tier 1 patterns. Any Tier 1 hit in a run that received a quality gate pass is a credibility finding — escalate to D3 (gate credibility questionable or not credible).
 
 | Severity | Criteria |
 |---|---|

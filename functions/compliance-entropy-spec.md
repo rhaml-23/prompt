@@ -22,7 +22,7 @@ outputs:
   - findings_list
   - systemic_patterns
   - reviewer_guidance
-governed_by: /constitution.md
+governed_by: config/constitution.md
 standalone: true
 ---
 
@@ -30,7 +30,7 @@ standalone: true
 **Version:** 0.2  
 **Status:** Experimental  
 **Purpose:** Longitudinal anomaly detection for compliance program health. Identifies patterns of programmatic entropy, audit coverage gaps, and non-durable remediation that single-cycle audit review cannot surface. This is a post-audit analysis tool. It does not replace audit review. It detects what audit review is structurally unable to see.  
-**Governed by:** `/constitution.md`  
+**Governed by:** `config/constitution.md`  
 
 ---
 
@@ -40,10 +40,10 @@ This spec operates under the Professional Intent Constitution. It has heightened
 
 - **Say the true thing** (Article IV.1) — entropy findings are uncomfortable by nature. The purpose of this spec is to surface what programs and their teams have not surfaced themselves. Softening findings to protect feelings or preserve relationships violates the constitution and defeats the spec's purpose. Say what the record shows.
 - **Never assess intent** — this spec's behavioral constraints already require this, and the constitution reinforces it. A finding that a control family was never sampled does not mean it was deliberately avoided. State the observation. Never impute motive.
-- **Customer protection from inaction** (Article I.3) — undetected compliance entropy is a form of inaction risk. A program that appears healthy while quietly degrading exposes customers to impact the principal is obligated to surface. This spec exists to discharge that obligation.
+- **Customer protection from inaction** (Article I.3) — undetected compliance entropy is a form of inaction risk. A program that appears healthy while quietly degrading exposes customers to impact the lead program manager is obligated to surface. This spec exists to discharge that obligation.
 - **Protect the downstream** (Article IV.2) — entropy findings feed into remediation planning and potentially audit conversations. Every finding must be traceable, complete, and accurately scoped so that whoever acts on it is not handed a defective input.
 - **Surface uncertainty** (Article IV.4) — low-confidence normalizations and input gaps must be disclosed. An authoritative-sounding finding derived from weak signal is more dangerous than no finding at all.
-- **One-way door awareness** (Article V.5, VII.2) — entropy reports that will be shared externally, with auditors, or with executive leadership constitute one-way door communications. The report itself is an internal artifact until the principal reviews and approves distribution. Flag any finding that, if acted upon immediately without review, would be irreversible.
+- **One-way door awareness** (Article V.5, VII.2) — entropy reports that will be shared externally, with auditors, or with executive leadership constitute one-way door communications. The report itself is an internal artifact until the lead program manager reviews and approves distribution. Flag any finding that, if acted upon immediately without review, would be irreversible.
 
 The final line of every entropy report must read: *"All findings require validation by a qualified compliance SME before action is taken."* This is a constitutional mandate, not a boilerplate disclaimer.
 
@@ -378,6 +378,14 @@ what it can.
 Four to six specific questions a compliance SME should investigate based on the
 highest-severity findings. These are not rhetorical. They are starting points
 for a human reviewer who will validate findings before action is taken.
+
+---
+
+## Companion Specs
+- Governed by: `config/constitution.md`
+- Standalone — invoked directly via `BEGIN ENTROPY ANALYSIS` or routed from `engine/session-init-spec.md`
+- Feed-forward source: `functions/post-audit-spec.md` — the `feed_forward_artifact` it produces (`data/[PROGRAM]/post-audit/[AUDIT_CYCLE]-feed-forward.json`) is a valid structured `AUDIT_REPORTS` input for this spec; its `findings_summary`, `corrective_actions`, and `systemic_patterns` fields are normalized for use in Phase 1 without additional extraction
+- Logged by: `scripts/provenance_log.py` — output_type: `entropy_report`
 
 ---
 

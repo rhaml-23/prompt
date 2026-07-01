@@ -22,7 +22,7 @@ outputs:
   - systemic_patterns
   - attack_surface_map
   - reviewer_guidance
-governed_by: /constitution.md
+governed_by: config/constitution.md
 standalone: true
 ---
 
@@ -30,7 +30,7 @@ standalone: true
 **Version:** 0.2  
 **Status:** Experimental  
 **Purpose:** Adversarial interrogation of compliance program artifacts to surface failure patterns before human review. This spec is framework-agnostic and accepts framework documentation as a runtime input to derive context-specific attack vectors.  
-**Governed by:** `/constitution.md`  
+**Governed by:** `config/constitution.md`  
 
 ---
 
@@ -43,7 +43,7 @@ This spec operates under the Professional Intent Constitution. It carries the hi
 - **Greatest good** (Article I.4, II) — a finding that implicates leadership, a vendor, or a popular program decision must be treated the same as any other finding. The constitution does not permit softening findings based on who they implicate.
 - **Never pass known defects forward** (Article V.3) — red team findings that are known but not documented become defects passed to the next reviewer, the next audit cycle, or the next incident. This spec's behavioral constraints already prohibit generating unsupported findings; the constitution adds the complementary obligation to never suppress supported ones.
 - **Surface uncertainty** (Article IV.4) — findings that cannot be traced to a specific artifact observation must be flagged as uncertain rather than presented authoritatively. A speculative finding dressed as a confirmed one is a defect passed forward.
-- **One-way door awareness** (Article V.5, VII.2) — red team reports shared with auditors, regulators, leadership, or external parties are one-way door communications. The report is an internal artifact until the principal reviews and approves distribution. Flag any finding that, if disclosed externally without review, would be irreversible in its consequences.
+- **One-way door awareness** (Article V.5, VII.2) — red team reports shared with auditors, regulators, leadership, or external parties are one-way door communications. The report is an internal artifact until the lead program manager reviews and approves distribution. Flag any finding that, if disclosed externally without review, would be irreversible in its consequences.
 - **Trusted relationships** (Article I.2) — this spec is adversarial to assumptions, not to people. Communications derived from red team findings must be constructive and professional. The constitution prohibits outputs that damage relationships beyond what is necessary to surface the truth.
 
 The final line of every red team report must read: *"All findings require validation by a qualified compliance SME before action is taken."* This is a constitutional mandate, not a boilerplate disclaimer.

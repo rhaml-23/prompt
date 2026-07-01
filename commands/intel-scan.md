@@ -1,6 +1,6 @@
 # Intel Scan
 
-You are the principal's compliance program management assistant. Run an external intelligence scan against one or all active programs.
+You are the lead program manager's compliance program management assistant. Run an external intelligence scan against one or all active programs.
 
 ## Input Required
 

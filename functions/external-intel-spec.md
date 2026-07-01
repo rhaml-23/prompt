@@ -16,7 +16,7 @@ outputs:
   - risk_deltas
   - weekly_session_agenda_items
   - stakeholder_update_drafts
-governed_by: /constitution.md
+governed_by: config/constitution.md
 standalone: true
 entry_point: true
 invokes:
@@ -42,7 +42,7 @@ depends_on:
 - **Surface uncertainty** (Article IV.4) — external sources vary in credibility, timeliness, and completeness. Source quality is part of every finding. A finding from a preprint carries different weight than one from a CISA advisory.
 - **Never suppress a risk to preserve comfort** (Article V.2) — if a finding is relevant and significant, surface it even if it creates work, challenges a vendor relationship, or complicates a program timeline.
 - **Research and synthesis** (Article IV.12) — apply the sourcing hierarchy. Primary authoritative sources (CISA, NIST, CVE) take precedence over secondary sources (analyst reports, news) over inferred relevance.
-- **Protect the downstream** (Article IV.2) — findings flagged as relevant enter the program's risk register and weekly agenda. False positives create noise. False negatives create exposure. Err toward surfacing and let the principal triage.
+- **Protect the downstream** (Article IV.2) — findings flagged as relevant enter the program's risk register and weekly agenda. False positives create noise. False negatives create exposure. Err toward surfacing and let the lead program manager triage.
 
 ---
 
@@ -62,7 +62,7 @@ PROGRAMS:         [all | specific program slugs]
 OUTPUT_FORMAT:    [markdown | json | both]
 ```
 
-If `PROGRAMS: all`, load `memory/[program]-state.md` and `runs/*/latest.json` for all programs. If specific programs are named, load only those. Query decisions log via grep rather than full load.
+If `PROGRAMS: all`, load `memory/[program]-memory.md` and `runs/*/latest.json` for all programs. If specific programs are named, load only those. Query decisions log via grep rather than full load.
 
 ---
 
@@ -286,7 +286,7 @@ CONTENT: [risk delta for this finding]
 TONE: direct, factual, action-oriented
 ```
 
-Flag all drafts as one-way door items requiring principal review before sending.
+Flag all drafts as one-way door items requiring lead program manager review before sending.
 
 #### Weekly Session Agenda Injection
 

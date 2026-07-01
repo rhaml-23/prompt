@@ -40,11 +40,11 @@ depends_on:
 ### Step 1 — Load memory
 
 Read for the active program:
-- `memory/[program_slug]-state.md` — full file (hot layer)
+- `memory/[program_slug]-memory.md` — full file (hot layer)
 - `tail -20 memory/[program_slug]-decisions.log` — recent decisions only
 - `/runs/[program_slug]/latest.json` — program_state and decision_queue only
 
-If `memory/[program_slug]-state.md` does not exist, note it and create from `memory/program-state-template.md` at session close. Also create `memory/[program_slug]-decisions.log` from template.
+If `memory/[program_slug]-memory.md` does not exist, note it and create from `memory/session-memory-template.md` at session close.
 
 ### Step 2 — Pattern scan
 
@@ -114,7 +114,7 @@ Rules for agenda proposal:
 - Lead with the highest-risk or most time-sensitive item — not the easiest
 - Maximum 5 agenda items for a 2-hour session — don't overload
 - If a pattern was surfaced, include addressing it as an agenda item unless it is clearly low priority
-- End with an open question — the principal modifies, approves, or redirects
+- End with an open question — the lead program manager modifies, approves, or redirects
 - Do not start work until the agenda is confirmed
 
 ---
@@ -164,7 +164,7 @@ DEFERRED
 [anything not addressed — reason and suggested next session priority]
 
 PATTERNS ADDRESSED
-[how the principal responded to any patterns raised at open]
+[how the lead program manager responded to any patterns raised at open]
 [or: no patterns raised / patterns noted but not addressed]
 
 PROGRAM STATE
@@ -178,7 +178,7 @@ Organize all outputs produced this session:
 ```
 STAGED DELIVERABLES
 
-Ready to send (requires principal review before sending):
+Ready to send (requires lead program manager review before sending):
   [file/description] → [recipient/channel]
 
 Ready to use:
@@ -188,11 +188,13 @@ Saved to repo:
   [file path] → [what it is]
 ```
 
-Everything in "ready to send" is flagged for one-way door review. Nothing goes out without the principal's explicit sign-off.
+Everything in "ready to send" is flagged for one-way door review. Nothing goes out without the lead program manager's explicit sign-off.
 
 ### Step 3 — Write session memory
 
-Append to `memory/[program_slug]-state.md` Recent Sessions section for each program touched this session. Also write qualifying events to `memory/[program_slug]-decisions.log`:
+Before writing, call `FileMemoryStore.write_session_wip(program, <draft content>)` to persist in-progress notes during the write. After successfully appending the final entry to `memory/[program_slug]-memory.md`, call `FileMemoryStore.clear_session_wip(program)` to remove the WIP file. If the session crashes between these two steps, the WIP file will be surfaced at the next session open (see `engine/session-init-spec.md` Step 1b).
+
+Append to `memory/[program_slug]-memory.md` for each program touched this session:
 
 ```markdown
 ### [YYYY-MM-DD]
@@ -202,7 +204,7 @@ Append to `memory/[program_slug]-state.md` Recent Sessions section for each prog
 **Decisions made:** [any — also add to Decision Log table]
 **Deferred:** [any — also add to Deferred Items table if 2+ deferrals]
 **Patterns noticed:** [any surfaced this session]
-**Principal direction on patterns:** [response or "acknowledged, no action"]
+**Lead program manager direction on patterns:** [response or "acknowledged, no action"]
 **State at close:** [one sentence]
 **Next session priority:** [agent recommendation]
 ```
@@ -231,5 +233,5 @@ Next session I'd suggest starting with: [top priority from memory]
 - Governed by: `config/constitution.md`
 - Reads: `memory/*.md`, `runs/*/latest.json`, `logs/provenance.jsonl`
 - Invokes: `engine/program-pipeline-orchestrator.md`, `functions/program-comms-spec.md`, `engine/quality-gate-spec.md`
-- Writes: `memory/*-state.md` (append sessions), `memory/*-decisions.log` (append events), `logs/provenance.jsonl`, `drafts/`, `runs/`
+- Writes: `memory/*-memory.md` (append sessions), `logs/provenance.jsonl`, `drafts/`, `runs/`
 - 

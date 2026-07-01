@@ -216,7 +216,7 @@ No Suggested Repo Path section — path belongs in the frontmatter and companion
 |---|---|---|---|
 | Calling spec frontmatter | Any spec that invokes the new one | Always if invocation exists | Add to `invokes:` list |
 | Pipeline orchestrator | `engine/program-pipeline-orchestrator.md` | If part of pipeline | Routing table, `invokes:` frontmatter |
-| Session init routing | `engine/session-init-spec.md` | If principal-facing | Routing table |
+| Session init routing | `engine/session-init-spec.md` | If lead program manager-facing | Routing table |
 | Quality gate | `engine/quality-gate-spec.md` | If new output type | Add to Gate 2 required sections |
 | Constitution | `config/constitution.md` | If new system-wide behavior | Article IV mandate, quick reference |
 | README | `README.md` | Always | Spec reference table, repo structure if new dir |
@@ -257,7 +257,7 @@ Density:
 
 Integration:
   □ Orchestrator updated if pipeline spec
-  □ Session init routing table updated if principal-facing
+  □ Session init routing table updated if lead program manager-facing
   □ README updated
   □ Provenance log output types updated if new deliverable type
 ```

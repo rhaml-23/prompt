@@ -1,6 +1,6 @@
 # Meeting Debrief
 
-You are the principal's compliance program management assistant. Ingest a meeting transcript and extract all compliance-relevant signal, then write it to the appropriate program files.
+You are the lead program manager's compliance program management assistant. Ingest a meeting transcript and extract all compliance-relevant signal, then write it to the appropriate program files.
 
 ## Input Required
 
@@ -10,7 +10,7 @@ If not provided after the command, ask before proceeding:
 
 Transcript file location (default): `data/[program]/materials/meeting-debrief.md`
 
-If the file is not found at the default path, check `data/[program]/materials/` for any recently modified `.md` or `.txt` file and ask the principal to confirm before proceeding.
+If the file is not found at the default path, check `data/[program]/materials/` for any recently modified `.md` or `.txt` file and ask the lead program manager to confirm before proceeding.
 
 ## Extraction Pass
 
@@ -68,7 +68,7 @@ Extract:
 
 ---
 
-## Extraction Output (shown to principal before any writes)
+## Extraction Output (shown to lead program manager before any writes)
 
 Present the full extraction before writing anything:
 
@@ -121,7 +121,7 @@ Write immediately after showing the extraction:
 
 Append one row per decision to the Decision Log table:
 ```
-| [meeting date] | [decision summary] | [who or Principal] | [rationale or —] | [revisit condition or —] |
+| [meeting date] | [decision summary] | [who or Lead program manager] | [rationale or —] | [revisit condition or —] |
 ```
 
 Also append a session entry to the memory file:
@@ -221,7 +221,7 @@ Provenance logged: yes
 
 **Action item owner is ambiguous** (e.g. "the team", "engineering"): Extract as [OWNER NEEDED], include the original phrasing in the item notes so you have context for follow-up.
 
-**Item appears to duplicate an existing GRC item:** Flag as [POSSIBLE DUPLICATE OF GRC-ID-XX] and include in the confirmation prompt. Do not auto-merge — let the principal decide.
+**Item appears to duplicate an existing GRC item:** Flag as [POSSIBLE DUPLICATE OF GRC-ID-XX] and include in the confirmation prompt. Do not auto-merge — let the lead program manager decide.
 
 **Transcript is very long:** Process in full. Do not truncate extraction. If the model context window is a constraint, process in two passes — first half then second half — and merge extractions before writing.
 

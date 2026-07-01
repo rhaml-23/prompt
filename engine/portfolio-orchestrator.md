@@ -15,19 +15,19 @@ outputs:
   - portfolio_briefing
   - cross_program_decision_queue
   - cross_program_blockers
-governed_by: /config/constitution.md
+governed_by: config/constitution.md
 standalone: true
 entry_point: true
 invokes:
   - engine/weekly-session-spec.md
 depends_on:
   - runs/*/latest.json
-  - memory/*-state.md
+  - memory/*-memory.md
 ---
 
 # Portfolio Orchestrator
 **Version:** 1.0
-**Purpose:** Aggregate state across all active programs into a single cross-program portfolio view. Surface decisions, blockers, escalations, and program health in a format the principal can act on in one pass. Auto-expand red programs. Green and yellow programs get one-line summaries.
+**Purpose:** Aggregate state across all active programs into a single cross-program portfolio view. Surface decisions, blockers, escalations, and program health in a format the lead program manager can act on in one pass. Auto-expand red programs. Green and yellow programs get one-line summaries.
 **Governed by:** `config/constitution.md`
 **Trigger:** On-demand — run at the start of any session where cross-program awareness is needed, or as the opening move of a portfolio weekly session.
 **Maintainer:** `[your name/handle]`
@@ -58,7 +58,7 @@ SESSION_MODE:   [briefing | weekly_session]
 
 Assign each program one of three health states. Apply the first matching rule.
 
-**Red — requires principal attention today:**
+**Red — requires lead program manager attention today:**
 - Any active escalation in the run JSON
 - Decision queue item aged 14+ days with no resolution
 - 2 or more open blockers
@@ -77,7 +77,7 @@ Assign each program one of three health states. Apply the first matching rule.
 - Run JSON current
 - No critical unaddressed risks
 
-If a program's run JSON cannot be found or read, classify as **Red — stale/missing** and flag for the principal.
+If a program's run JSON cannot be found or read, classify as **Red — stale/missing** and flag for the lead program manager.
 
 ---
 
@@ -88,7 +88,7 @@ If a program's run JSON cannot be found or read, classify as **Red — stale/mis
 Load the following for each program in scope:
 
 - `runs/[PROGRAM]/latest.json` — current program state
-- `memory/[PROGRAM]-state.md` — standing context, deferred items, recent sessions (hot layer)
+- `memory/[PROGRAM]-memory.md` — standing context, deferred items, recent sessions (hot layer)
 - `tail -20 memory/[PROGRAM]-decisions.log` — recent decisions only
 
 Extract the portfolio fields defined in the schema below. Flag any field that cannot be populated as `[UNAVAILABLE]`.
@@ -310,7 +310,9 @@ If a memory file is missing for a program that has run JSON: proceed without mem
 
 ## Companion Specs
 - Governed by: `config/constitution.md`
-- Reads: `runs/*/latest.json`, `memory/*-state.md` (hot), `tail memory/*-decisions.log` (recent decisions)
+- Reads: `runs/*/latest.json`, `memory/*-memory.md` (hot), `tail memory/*-decisions.log` (recent decisions)
 - Writes: `data/portfolio/latest.json`
 - Invokes: `engine/weekly-session-spec.md` in weekly_session mode
 - Rendered by: `scripts/portfolio_renderer.py` → `ui/portfolio.html`
+- Quarterly synthesis companion: `engine/portfolio-qbr-spec.md` — cross-program narrative, trend analysis, and strategic recommendations across the full quarter
+- Program dashboard rendering: `functions/program-dashboard-spec.md` — per-program and portfolio HTML dashboard generation using the light-theme design system

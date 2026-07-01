@@ -1,6 +1,9 @@
 # Command Reference
 **Compliance Agent System — Slash Commands**
-`.cursor/commands/` — invoke with `/command-name` in the Cursor Agent composer
+
+Canonical command bodies live in `commands/*.md` (this folder). Copy or symlink them to `.cursor/commands/` if you use Cursor slash commands from that path — invoke with `/command-name` in the Cursor Agent composer.
+
+**Cursor Agent Skills** mirror the same workflows: `.cursor/skills/<command-name>/SKILL.md` at this repository’s root (YAML `description` for discovery; body points at `commands/<command-name>.md`). Open this repo as the Cursor workspace, or add it as a folder in a multi-root workspace, so Cursor loads project skills.
 
 ---
 
@@ -8,6 +11,7 @@
 
 | Command | What it does | Required args |
 |---|---|---|
+| `/init` | Session init: constitution, inventory, classify input or orientation, route per spec | none (optional pasted context) |
 | `/daily-brief` | Morning portfolio health + what's due today | none |
 | `/program-status` | One-page status for a single program | program |
 | `/due-this-week` | Cross-program digest of everything due in 7 days | none |
@@ -21,10 +25,24 @@
 | `/provenance-query` | What has the system produced for a program | program |
 | `/meeting-debrief` | Ingest a meeting transcript and update program state | program |
 | `/control-assessment` | Fill auditor template from framework + product docs | program, framework, template, product source |
+| `/kanban` | View, update, or initialize a program kanban board; generate Jira exports | optional: program |
 
 ---
 
 ## Commands
+
+### `/init`
+Runs the full **Session Initialization Spec** (`engine/session-init-spec.md`). Loads the constitution and performs live directory discovery, then either classifies provided input and routes to the right spec, or produces a short session orientation when no input is given.
+
+```
+/init
+```
+
+Optional: paste email, Slack thread, meeting notes, or a task description on the same message or immediately after — it becomes the input to classify.
+
+No required arguments. Governed by `config/constitution.md`; outputs pass through `engine/quality-gate-spec.md` per the session-init-spec.
+
+---
 
 ### `/daily-brief`
 Morning orientation across all active programs. Reads portfolio state, all program run JSONs, and provenance log. Surfaces health, what's due today, pending decisions, and open blockers in a single view under 40 lines.
@@ -226,6 +244,38 @@ Suggested file naming:
 
 ---
 
+### `/kanban [program] [operation] [card-id]`
+Views or updates a program's kanban board. Without a program argument, produces a cross-program summary of all blocked and overdue cards across all active boards. Backed by `data/[program]/kanban.yaml` with a Jira-aligned schema — cards use Jira issue types, priorities, and workflow statuses.
+
+```
+/kanban
+/kanban fedramp-high
+/kanban fedramp-high init
+/kanban fedramp-high add
+/kanban fedramp-high update PM-019
+/kanban fedramp-high export
+/kanban fedramp-high sprint
+```
+
+Arguments:
+- `program` — program slug (optional; omit for cross-program view)
+- `operation` — `init` `add` `update` `export` `sprint` (default: `status`)
+- `card-id` — card ID for `update`, e.g. `PM-019`
+
+Operations:
+- **status** (default) — board column counts, blocked/overdue detail, sprint velocity
+- **init** — scaffold board from latest run JSON (decision queue, POA&M, control gaps); requires confirmation
+- **add** — add a card with prompted Jira-compatible fields
+- **update** — move a card, add a progress note, set assignee, mark blocked; moving to `done`/`canceled` requires confirmation
+- **export** — generate Jira import CSV/JSON in `drafts/`; if Jira MCP is active, creates issues directly
+- **sprint** — create/close sprints, view velocity
+
+When `plugin-atlassian-atlassian` MCP is available and the board has a `jira_project_key`, write operations route to Jira MCP instead of writing YAML. `jira_key` is populated back to YAML after Jira confirms.
+
+One-way door: moving a card to `done` or `canceled` when it is linked to a POA&M item during an active audit window requires explicit confirmation.
+
+---
+
 ## Notes
 
 **All commands are governed by `config/constitution.md`.** One-way door actions (closing items during audit windows, sending external communications) require explicit confirmation regardless of command.
@@ -240,18 +290,48 @@ Suggested file naming:
 
 ## File Locations
 
+**Source (repo):**
+
 ```
-.cursor/commands/daily-brief.md
-.cursor/commands/program-status.md
-.cursor/commands/due-this-week.md
-.cursor/commands/meeting-prep.md
-.cursor/commands/draft-status-update.md
-.cursor/commands/evidence-due.md
-.cursor/commands/log-decision.md
-.cursor/commands/update-item.md
-.cursor/commands/intel-scan.md
-.cursor/commands/auditor-view.md
-.cursor/commands/provenance-query.md
-.cursor/commands/control-assessment.md
-.cursor/commands/meeting-debrief.md
+commands/init.md
+commands/daily-brief.md
+commands/program-status.md
+commands/due-this-week.md
+commands/meeting-prep.md
+commands/draft-status-update.md
+commands/evidence-due.md
+commands/log-decision.md
+commands/update-item.md
+commands/intel-scan.md
+commands/auditor-view.md
+commands/provenance-query.md
+commands/control-assessment.md
+commands/meeting-debrief.md
+commands/kanban.md
+```
+
+**Cursor slash commands (optional copy/symlink target):**
+
+```
+.cursor/commands/<same filenames as above>
+```
+
+**Cursor Agent Skills (project):**
+
+```
+.cursor/skills/init/SKILL.md
+.cursor/skills/daily-brief/SKILL.md
+.cursor/skills/program-status/SKILL.md
+.cursor/skills/due-this-week/SKILL.md
+.cursor/skills/meeting-prep/SKILL.md
+.cursor/skills/draft-status-update/SKILL.md
+.cursor/skills/evidence-due/SKILL.md
+.cursor/skills/log-decision/SKILL.md
+.cursor/skills/update-item/SKILL.md
+.cursor/skills/intel-scan/SKILL.md
+.cursor/skills/auditor-view/SKILL.md
+.cursor/skills/provenance-query/SKILL.md
+.cursor/skills/control-assessment/SKILL.md
+.cursor/skills/meeting-debrief/SKILL.md
+.cursor/skills/kanban/SKILL.md
 ```

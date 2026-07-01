@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-04-02T00:00:00Z",
+  "programs": [
+    {
+      "program_slug": "62443",
+      "status": "active",
+      "data_path": "data/62443",
+      "runs_path": "runs/62443",
+      "memory_path": "memory/62443-memory.md"
+    },
+    {
+      "program_slug": "customer-portal-ugc-sso",
+      "status": "active",
+      "data_path": "data/CP UGC SSO",
+      "runs_path": "runs/customer-portal-ugc-sso",
+      "memory_path": "memory/customer-portal-ugc-sso-memory.md",
+      "notes": "Canonical slug for CP UGC SSO artifacts and runs."
+    },
+    {
+      "program_slug": "hds",
+      "status": "active",
+      "data_path": "data/HDS",
+      "runs_path": "runs/hds",
+      "memory_path": "memory/hds-memory.md",
+      "notes": "French HDS v2.0 (April 2024) + ISO/IEC 27001:2023 certification program. Full build 2026-04-02. Internal audit complete June 2025 (FeelAgile). External audit stages 1+2 appear complete [INFERRED]; certification status [UNCLEAR]. NCMaj-1 open."
+    },
+    {
+      "program_slug": "iso42001",
+      "status": "active",
+      "data_path": "data/ISO42001",
+      "runs_path": "runs/iso42001",
+      "memory_path": "memory/iso42001-memory.md",
+      "notes": "Unified AIMS program — full build 2026-04-02. ISO/IEC 42001:2023 certification target Nov 2026."
+    }
+  ],
+  "shared_resources": [
+    {
+      "resource_slug": "vendor-security-assessments",
+      "status": "shared_resource",
+      "data_path": "data/Vendor Security Assessments",
+      "routing_guidance": "Use for one-off escalated vendor requests. Do not onboard into runs/ or portfolio health unless explicitly promoted to a program."
+    }
+  ]
+}

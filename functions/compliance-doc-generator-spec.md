@@ -1,30 +1,43 @@
-resource\_type: spec version: "2.4" domain: compliance triggers:
+---
+resource_type: spec
+version: "2.4"
+domain: compliance
+triggers:
+  - onboarding_phase_1
+  - compliance_refresh
+  - audit_prep
+  - portfolio_aggregation
+inputs:
+  - gemara_yaml_layer2
+  - gemara_yaml_layer5
+  - compliance_library_resources
+outputs:
+  - soa_csv
+  - risk_assessment_csv
+  - impact_assessment_csv
+  - dependency_map_csv
+  - compliance_context_md
+  - collective_risk_register_csv
+governed_by: config/constitution.md
+standalone: true
+entry_point: false
+invoked_by: engine/program-pipeline-orchestrator.md
+invokes:
+  - engine/quality-gate-spec.md
+depends_on:
+  - spells/artifacts/generate_soa.py
+  - spells/artifacts/generate_risk.py
+  - spells/artifacts/generate_impact.py
+  - spells/artifacts/generate_dependency_map.py
+  - spells/artifacts/generate_ccd.py
+  - spells/artifacts/generate_collective_risk.py
+---
 
-* onboarding\_phase\_1  
-* compliance\_refresh  
-* audit\_prep  
-* portfolio\_aggregation inputs:  
-* gemara\_yaml\_layer2  
-* gemara\_yaml\_layer5  
-* compliance\_library\_resources \# Standards PDFs, Control CSVs, Risk Libraries outputs:  
-* soa\_csv  
-* risk\_assessment\_csv  
-* impact\_assessment\_csv  
-* dependency\_map\_csv  
-* compliance\_context\_md  
-* collective\_risk\_register\_csv governed\_by: /constitution.md standalone: true entry\_point: false invoked\_by:  
-* program-pipeline-orchestrator.md invokes:  
-* quality-gate-spec.md depends\_on:  
-* artifacts/generate\_soa.py  
-* artifacts/generate\_risk.py  
-* artifacts/generate\_impact.py  
-* artifacts/generate\_dependency\_map.py  
-* artifacts/generate\_ccd.py  
-* artifacts/generate\_collective\_risk.py
-
-# **Compliance Doc Generator Spec**
-
-**Version:** 2.4 **Purpose:** Agnostic orchestration of compliance artifact generation. Uses capability-first discovery to map architectural facts to multiple standards and executes deterministic scripts to build program resources. **Governed by:** `/constitution.md` **Maintainer:** `[your name/handle]`
+# Compliance Doc Generator Spec
+**Version:** 2.4
+**Purpose:** Agnostic orchestration of compliance artifact generation. Uses capability-first discovery to map architectural facts to multiple standards and executes deterministic scripts to build program resources.
+**Governed by:** `config/constitution.md`
+**Maintainer:** `[your name/handle]`
 
 ## **Constitutional Guidance**
 
@@ -121,9 +134,8 @@ Execute scripts in this strict sequence:
 
 `/compliance-doc-generator-spec.md`
 
-## **Companion Specs**
-
-* Governed by: `constitution.md`  
-* Orchestrator: `program-pipeline-orchestrator.md`  
-* Quality Gate: `quality-gate-spec.md`
+## Companion Specs
+- Governed by: `config/constitution.md`
+- Orchestrator: `engine/program-pipeline-orchestrator.md`
+- Quality Gate: `engine/quality-gate-spec.md`
 

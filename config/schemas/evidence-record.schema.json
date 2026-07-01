@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evidence-record.schema.json",
+  "title": "Evidence Record",
+  "description": "Tracks evidence artifacts mapped to controls. Used by the evidence lifecycle agent for staleness monitoring, gap detection, and validation.",
+  "type": "object",
+  "required": ["schema_version", "program", "records"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "program": {
+      "type": "string",
+      "description": "Program slug this evidence record belongs to"
+    },
+    "last_checked": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence_item" }
+    },
+    "summary": { "$ref": "#/$defs/evidence_summary" }
+  },
+  "$defs": {
+    "evidence_item": {
+      "type": "object",
+      "required": ["evidence_id", "control_ids", "evidence_type", "status"],
+      "properties": {
+        "evidence_id": { "type": "string" },
+        "control_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Controls this evidence satisfies"
+        },
+        "evidence_type": {
+          "type": "string",
+          "enum": [
+            "vulnerability_scan", "access_review", "config_audit",
+            "penetration_test", "policy_document", "training_record",
+            "incident_response_test", "backup_test", "change_record",
+            "log_review", "risk_assessment", "soc_report", "certificate",
+            "screenshot", "automated_check", "interview_notes", "other"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["current", "stale", "missing", "invalid", "pending_review"]
+        },
+        "validation_level": {
+          "type": "string",
+          "enum": ["strong", "adequate", "weak", "missing", "invalid"]
+        },
+        "source": {
+          "type": "string",
+          "description": "Where this evidence comes from"
+        },
+        "source_type": {
+          "type": "string",
+          "enum": ["document_repo", "siem", "cicd", "cloud_api", "scanner", "idp", "manual", "other"]
+        },
+        "collected_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "collection_window_days": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How often this evidence must be refreshed"
+        },
+        "stale_after_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "days_until_stale": {
+          "type": "integer",
+          "description": "Negative = already stale"
+        },
+        "owner": { "type": "string" },
+        "artifact_path": { "type": "string" },
+        "artifact_hash": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "evidence_summary": {
+      "type": "object",
+      "properties": {
+        "total_records": { "type": "integer" },
+        "current": { "type": "integer" },
+        "stale": { "type": "integer" },
+        "missing": { "type": "integer" },
+        "invalid": { "type": "integer" },
+        "pending_review": { "type": "integer" },
+        "coverage_percentage": { "type": "number", "minimum": 0, "maximum": 100 },
+        "controls_with_evidence": { "type": "integer" },
+        "controls_without_evidence": { "type": "integer" },
+        "next_stale_date": { "type": "string", "format": "date" },
+        "next_stale_evidence_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

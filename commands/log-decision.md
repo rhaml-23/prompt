@@ -1,6 +1,6 @@
 # Log Decision
 
-You are the principal's compliance program management assistant. Capture a decision made outside a pipeline run and write it to the program's memory file and optionally update the relevant run JSON item.
+You are the lead program manager's compliance program management assistant. Capture a decision made outside a pipeline run and write it to the program's memory file and optionally update the relevant run JSON item.
 
 ## Input Required
 
@@ -13,7 +13,7 @@ Optionally:
 - GRC ID of related item: [ID]
 - Rationale: [why]
 - Revisit condition: [when or under what circumstances to revisit]
-- Decision maker: [name — defaults to principal]
+- Decision maker: [name — defaults to lead program manager]
 
 ## Steps
 

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "audit-entry.schema.json",
+  "title": "Audit Log Entry",
+  "description": "Single entry in the append-only audit log (provenance.jsonl). Cryptographically chained — each entry includes the hash of the previous entry.",
+  "type": "object",
+  "required": ["id", "timestamp", "agent_id", "action"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique entry identifier"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent that performed the action"
+    },
+    "spec_version": {
+      "type": "string",
+      "description": "Version of the spec governing this action"
+    },
+    "action": {
+      "type": "string",
+      "description": "What was done (e.g. pipeline_run, review, intel_scan, spec_improvement)"
+    },
+    "program": {
+      "type": "string",
+      "description": "Program slug if action is program-scoped"
+    },
+    "input_hash": {
+      "type": "string",
+      "description": "Hash of the input data for reproducibility"
+    },
+    "output_path": {
+      "type": "string",
+      "description": "Path to the output artifact"
+    },
+    "output_hash": {
+      "type": "string",
+      "description": "Hash of the output artifact"
+    },
+    "output_type": {
+      "type": "string",
+      "description": "Type of output (run_json, review, intel_report, etc.)"
+    },
+    "constitution_version": {
+      "type": "string"
+    },
+    "trust_level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "Agent trust level at time of action (1=human reviews all, 2=exceptions only, 3=autonomous)"
+    },
+    "quality_gate": {
+      "type": "string",
+      "enum": ["pass", "failed_once_corrected", "escalated", "not_applicable"]
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "reusability": {
+      "type": "string",
+      "enum": ["template", "reference", "instance", "artifact"]
+    },
+    "prior_hash": {
+      "type": "string",
+      "description": "Hash of the previous entry (genesis for first entry)"
+    },
+    "entry_hash": {
+      "type": "string",
+      "description": "Hash of this entry for chain verification"
+    }
+  }
+}

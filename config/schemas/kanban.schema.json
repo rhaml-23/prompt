@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kanban.schema.json",
+  "title": "Program Kanban Board",
+  "description": "Per-program Jira-aligned kanban board stored at data/[program]/kanban.yaml. Cards use Jira issue types, priorities, and workflow statuses for zero-translation sync when a Jira MCP is available. The file is the canonical source of truth; dashboards read from it, never write to it.",
+  "type": "object",
+  "required": ["schema_version", "program", "board_name", "updated_at", "columns", "cards"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version — increment when breaking changes are made"
+    },
+    "program": {
+      "type": "string",
+      "description": "Program slug matching the runs/ directory name"
+    },
+    "board_name": {
+      "type": "string",
+      "description": "Human-readable board title, e.g. 'FedRAMP High — Project Board'"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date of the last write to this file"
+    },
+    "jira_project_key": {
+      "type": ["string", "null"],
+      "description": "Jira project key (e.g. 'FEDRAMP'). Null until a Jira project exists. When set, the project-manager agent routes create/update operations to Jira MCP instead of writing YAML directly.",
+      "default": null
+    },
+    "jira_board_id": {
+      "type": ["integer", "null"],
+      "description": "Jira board ID for sprint sync. Null until synced.",
+      "default": null
+    },
+    "sprints": {
+      "type": "array",
+      "description": "Ordered list of sprints. Active sprint is the first entry with end date >= today.",
+      "items": { "$ref": "#/$defs/sprint" },
+      "default": []
+    },
+    "columns": {
+      "type": "array",
+      "description": "Ordered kanban columns. Must include at least 'backlog' and 'done'. Column IDs map to Jira workflow status names.",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/column" }
+    },
+    "cards": {
+      "type": "array",
+      "description": "All cards on this board, across all columns and sprints.",
+      "items": { "$ref": "#/$defs/card" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "sprint": {
+      "type": "object",
+      "required": ["id", "name", "start", "end"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Slug ID, e.g. 'sprint-1' or 'q2-2026-wk1'"
+        },
+        "jira_sprint_id": {
+          "type": ["integer", "null"],
+          "description": "Jira sprint ID for sync. Null until synced.",
+          "default": null
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name, e.g. 'Sprint 1 — Q2 2026'"
+        },
+        "start": {
+          "type": "string",
+          "format": "date"
+        },
+        "end": {
+          "type": "string",
+          "format": "date"
+        },
+        "goal": {
+          "type": "string",
+          "description": "Sprint goal — one sentence",
+          "default": ""
+        },
+        "state": {
+          "type": "string",
+          "enum": ["future", "active", "closed"],
+          "default": "future"
+        }
+      }
+    },
+    "column": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": ["backlog", "to_do", "in_progress", "in_review", "done", "blocked", "canceled"],
+          "description": "Column identifier — maps to Jira workflow status"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name shown in the board UI"
+        },
+        "wip_limit": {
+          "type": ["integer", "null"],
+          "description": "Work-in-progress limit. Null means no limit.",
+          "default": null
+        }
+      }
+    },
+    "card": {
+      "type": "object",
+      "required": ["id", "type", "title", "column", "priority", "created_at", "updated_at"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Local card ID, e.g. 'PM-001'. Unique within this board. Never reused after deletion."
+        },
+        "jira_key": {
+          "type": ["string", "null"],
+          "description": "Jira issue key, e.g. 'FEDRAMP-42'. Null until synced to Jira. When set, the project-manager agent uses this as the canonical ID for all Jira operations.",
+          "default": null
+        },
+        "type": {
+          "type": "string",
+          "enum": ["epic", "story", "task", "bug", "subtask"],
+          "description": "Jira issue type. Epics are parent containers; subtasks must have a parent_id."
+        },
+        "title": {
+          "type": "string",
+          "description": "Card title — maps to Jira Summary field"
+        },
+        "description": {
+          "type": "string",
+          "description": "Full description — maps to Jira Description field",
+          "default": ""
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Checklist of done conditions. Maps to Jira Acceptance Criteria field or appended to Description.",
+          "default": []
+        },
+        "column": {
+          "type": "string",
+          "enum": ["backlog", "to_do", "in_progress", "in_review", "done", "blocked", "canceled"],
+          "description": "Current column — maps to Jira workflow status"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low"],
+          "description": "Maps to Jira Priority field. 'critical' maps to Jira 'Highest'."
+        },
+        "assignee": {
+          "type": ["string", "null"],
+          "description": "Assignee name or username. Maps to Jira Assignee.",
+          "default": null
+        },
+        "reporter": {
+          "type": ["string", "null"],
+          "description": "Reporter name or username. Maps to Jira Reporter.",
+          "default": null
+        },
+        "labels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Free-form labels. Maps to Jira Labels field.",
+          "default": []
+        },
+        "components": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Component names. Maps to Jira Components field.",
+          "default": []
+        },
+        "sprint": {
+          "type": ["string", "null"],
+          "description": "Sprint ID from sprints[]. Null means unscheduled (backlog). Maps to Jira Sprint field.",
+          "default": null
+        },
+        "story_points": {
+          "type": ["number", "null"],
+          "description": "Story point estimate. Maps to Jira Story Points / Story point estimate field.",
+          "default": null
+        },
+        "due": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Due date. Maps to Jira Due date field.",
+          "default": null
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "parent_id": {
+          "type": ["string", "null"],
+          "description": "Local card ID of the parent epic or story. Required for subtasks.",
+          "default": null
+        },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Local card IDs this card is blocked by (logical dependency, not a blocker condition).",
+          "default": []
+        },
+        "blocked_by": {
+          "type": ["string", "null"],
+          "description": "Free-text description of what is blocking progress. Must be set when column is 'blocked'. Null otherwise.",
+          "default": null
+        },
+        "progress_notes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/progress_note" },
+          "description": "Append-only log of progress updates. Never edited — only appended.",
+          "default": []
+        },
+        "linked_controls": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Compliance control IDs this card relates to, e.g. ['AC-2', 'AC-3']. Used to cross-reference with run JSON control_coverage.",
+          "default": []
+        },
+        "evidence_window_id": {
+          "type": ["string", "null"],
+          "description": "ID of a calendar evidence window this card tracks. Links to data/[program]/[date]-calendar.ics events.",
+          "default": null
+        },
+        "poam_id": {
+          "type": ["string", "null"],
+          "description": "POA&M or GRC item ID from the run JSON, e.g. 'ID-18'. Links this card to the formal tracking record.",
+          "default": null
+        },
+        "fix_version": {
+          "type": ["string", "null"],
+          "description": "Target release or audit window, e.g. 'Q2-2026-ATO'. Maps to Jira Fix Version/s.",
+          "default": null
+        },
+        "epic_link": {
+          "type": ["string", "null"],
+          "description": "Local ID or jira_key of the parent epic. For Jira CSV import compatibility.",
+          "default": null
+        }
+      }
+    },
+    "progress_note": {
+      "type": "object",
+      "required": ["date", "note"],
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "note": {
+          "type": "string",
+          "description": "Short update — what happened, what changed, what's next"
+        },
+        "author": {
+          "type": ["string", "null"],
+          "description": "Who wrote this note",
+          "default": null
+        }
+      }
+    }
+  }
+}

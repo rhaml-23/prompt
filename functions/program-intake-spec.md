@@ -383,7 +383,7 @@ Invoke `functions/program-comms-spec.md` twice, passing `people.roster` and prog
 Both drafts flagged `pm_action_required: true`. Written to `drafts/[PROGRAM]-kickoff.md` and `drafts/[PROGRAM]-stakeholder-intro.md`.
 
 ```
-[BUILD] Draft communications: 2 drafts — flagged for principal review (one-way door)
+[BUILD] Draft communications: 2 drafts — flagged for lead program manager review (one-way door)
 ```
 
 ### Step 4e — Build Summary and Provenance
@@ -399,7 +399,7 @@ Artifacts produced:
   ✓ Draft communications — 2 drafts (flagged for review)
   ✓ Run JSON written to runs/[PROGRAM]/latest.json
 
-Gaps requiring principal input:
+Gaps requiring lead program manager input:
   [all OWNER NEEDED, DATE NEEDED, INSUFFICIENT DATA items
    aggregated across all artifacts — sorted by severity]
 

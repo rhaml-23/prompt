@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fleet-metrics.schema.json",
+  "title": "Fleet Metrics",
+  "description": "Operational metrics for the compliance agent fleet. Produced by the metrics collector and consumed by the fleet dashboard.",
+  "type": "object",
+  "required": ["schema_version", "timestamp"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "agent_metrics": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/agent_metric" }
+    },
+    "program_metrics": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/program_metric" }
+    },
+    "cost_records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cost_record" }
+    },
+    "decision_trail": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/decision_entry" }
+    }
+  },
+  "$defs": {
+    "agent_metric": {
+      "type": "object",
+      "required": ["agent_id", "agent_type"],
+      "properties": {
+        "agent_id": { "type": "string" },
+        "agent_type": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "idle", "error", "offline"] },
+        "last_active": { "type": "string", "format": "date-time" },
+        "total_actions": { "type": "integer", "minimum": 0 },
+        "actions_24h": { "type": "integer", "minimum": 0 },
+        "errors_24h": { "type": "integer", "minimum": 0 },
+        "error_rate_24h": { "type": "number", "minimum": 0, "maximum": 1 },
+        "escalations_24h": { "type": "integer", "minimum": 0 },
+        "avg_action_duration_ms": { "type": "number", "minimum": 0 },
+        "tokens_used_session": { "type": "integer", "minimum": 0 },
+        "tokens_used_24h": { "type": "integer", "minimum": 0 },
+        "trust_level": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "current_task": { "type": "string" }
+      }
+    },
+    "program_metric": {
+      "type": "object",
+      "required": ["program"],
+      "properties": {
+        "program": { "type": "string" },
+        "health": { "type": "string", "enum": ["green", "yellow", "red", "unknown"] },
+        "total_runs": { "type": "integer", "minimum": 0 },
+        "runs_30d": { "type": "integer", "minimum": 0 },
+        "avg_run_duration_min": { "type": "number", "minimum": 0 },
+        "open_findings": { "type": "integer", "minimum": 0 },
+        "resolved_findings_30d": { "type": "integer", "minimum": 0 },
+        "avg_finding_resolution_days": { "type": "number", "minimum": 0 },
+        "finding_velocity": { "type": "number" },
+        "evidence_coverage_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "stale_evidence_count": { "type": "integer", "minimum": 0 },
+        "tokens_used_30d": { "type": "integer", "minimum": 0 },
+        "last_run_date": { "type": "string" }
+      }
+    },
+    "cost_record": {
+      "type": "object",
+      "required": ["agent_id", "tokens_input", "tokens_output"],
+      "properties": {
+        "agent_id": { "type": "string" },
+        "program": { "type": "string" },
+        "framework": { "type": "string" },
+        "action": { "type": "string" },
+        "tokens_input": { "type": "integer", "minimum": 0 },
+        "tokens_output": { "type": "integer", "minimum": 0 },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "decision_entry": {
+      "type": "object",
+      "required": ["timestamp", "decision_type", "agent_id"],
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "decision_type": {
+          "type": "string",
+          "enum": ["routing", "escalation", "authority_check", "trust_change", "circuit_breaker", "priority_override"]
+        },
+        "agent_id": { "type": "string" },
+        "details": { "type": "object" }
+      }
+    }
+  }
+}

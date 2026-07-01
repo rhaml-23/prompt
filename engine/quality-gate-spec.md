@@ -23,9 +23,9 @@ applies_to:
 
 # Quality Gate Spec
 **Version:** 1.0  
-**Purpose:** Validate, assess, and where necessary reject and regenerate all spec outputs before delivery to the principal. Enforces structural completeness, constitutional alignment, and output standards across all output types.  
+**Purpose:** Validate, assess, and where necessary reject and regenerate all spec outputs before delivery to the lead program manager. Enforces structural completeness, constitutional alignment, and output standards across all output types.  
 **Governed by:** `config/constitution.md`  
-**Invoked by:** All specs prior to output delivery. The orchestrator runs this gate as the final step before presenting any output to the principal.  
+**Invoked by:** All specs prior to output delivery. The orchestrator runs this gate as the final step before presenting any output to the lead program manager.  
 
 ---
 
@@ -46,8 +46,8 @@ Independent QA reviewer. Do not generate content — evaluate it. No benefit of 
 Execute all gates in order. Do not skip gates because an earlier gate passed. All gates run on every output.
 
 A single REJECT classification on any gate triggers the regeneration protocol.  
-A PASS on all gates triggers delivery to the principal.  
-An ESCALATE classification on any gate bypasses regeneration and goes directly to the principal.
+A PASS on all gates triggers delivery to the lead program manager.  
+An ESCALATE classification on any gate bypasses regeneration and goes directly to the lead program manager.
 
 ---
 
@@ -105,6 +105,12 @@ Report Header, Executive Summary, Scope Coherence Findings, Findings (minimum on
 
 **JSON Pipeline Output:**
 schema_version, constitution_version, run_manifest, program_state, constitutional_alignment block, flags, next_run_recommendation
+
+**Lessons Learned Report:**
+Report Header, Findings Table by Control Family, Recurrence Flags (`[NON_DURABLE_REMEDIATION]` where applicable), Improvement Signals, Reviewer Guidance, final validation line ("All findings require validation by a qualified compliance SME before action is taken.")
+
+**Corrective Action Plan:**
+Finding-to-Action mapping table (CA ID, Source Finding, Control Family, Priority, Description, Owner, Target Date, Success Criteria), Flags Summary (all `[OWNER NEEDED]` and `[DATE NEEDED]` items listed by CA ID)
 
 **Draft Communication:**
 To, Channel, Subject, Body, Send Checklist
@@ -187,10 +193,10 @@ PASSING:  "This requires additional review before the next audit cycle."
 ```
 
 ### Authority
-The output is written from a position of expertise. It does not defer to the reader's judgment on matters within the spec's domain. It does not over-explain basics. It assumes the principal is a peer.
+The output is written from a position of expertise. It does not defer to the reader's judgment on matters within the spec's domain. It does not over-explain basics. It assumes the lead program manager is a peer.
 
 Failing patterns:
-- Explaining compliance concepts the principal already knows
+- Explaining compliance concepts the lead program manager already knows
 - Framing findings as possibilities when the evidence supports conclusions
 - "You may want to..." when the recommendation is clear
 - Excessive context-setting before getting to the point
@@ -242,7 +248,7 @@ Run additional checks based on output type.
 □ Recipient and channel are specified
 □ Subject line is present and specific (not generic like "Update" or "FYI")
 □ Body makes exactly one primary ask or delivers exactly one primary message
-□ No content that would constitute a one-way door action without principal approval notation
+□ No content that would constitute a one-way door action without lead program manager approval notation
 □ Send checklist is present
 ```
 
@@ -276,6 +282,24 @@ Run additional checks based on output type.
 
 ---
 
+## Gate 6 — Document Language Standards
+
+Load `engine/doc-style-guide.md`. Run the scan protocol against the full output text.
+
+```
+□ No Tier 1 (Critical) patterns present — AI vocabulary clusters, vague attribution,
+  promotional language, collaborative preamble, knowledge-gap speculation
+□ Tier 2 (Caution) patterns noted for validation report
+```
+
+| Result | Condition |
+|---|---|
+| PASS | No Tier 1 findings |
+| REJECT | Any Tier 1 finding — regenerate with style correction brief citing specific pattern and verbatim excerpt |
+| FLAG | Tier 2 findings only — note in validation report; escalate to REJECT only if Gate 4 (Tone) also failed |
+
+---
+
 ## Regeneration Protocol
 
 When any gate produces a REJECT:
@@ -304,7 +328,7 @@ Run all gates again on the regenerated output.
 If the regenerated output fails any gate:
 
 ```
-ESCALATION TO PRINCIPAL
+ESCALATION TO LEAD PROGRAM MANAGER
 
 Output type: [type]
 Spec: [generating spec]
@@ -318,7 +342,7 @@ provide correction direction, or discard.
 [attach output]
 ```
 
-Do not attempt a third regeneration without principal direction.
+Do not attempt a third regeneration without lead program manager direction.
 
 ---
 
@@ -330,7 +354,7 @@ When an output passes all gates, produce a minimal validation report:
 QUALITY GATE — PASS
 Output: [type]
 Spec: [generating spec]
-Gates: Constitutional ✓  Structure ✓  Format ✓  Tone ✓  Type-specific ✓
+Gates: Constitutional ✓  Structure ✓  Format ✓  Tone ✓  Type-specific ✓  Language ✓
 Validated: [date]
 ```
 
@@ -360,6 +384,16 @@ NEVER:
   ✗ Deference to the reader on matters within spec domain
   ✗ Section introductions that restate the section title
   ✗ Closing filler
+  ✗ AI vocabulary cluster: delve, pivotal, crucial, underscore (verb), showcase, foster,
+    garner, align with, bolstered, enhance, enduring, landscape (abstract), tapestry (abstract),
+    testament, vibrant, meticulous, intricate, interplay, Additionally (sentence-initial)
+    — 3+ of these in any 200-word passage triggers Gate 6 REJECT
+  ✗ Vague attribution: "industry reports", "experts argue", "observers note", "several sources"
+  ✗ Promotional language: boasts, groundbreaking, renowned, nestled, vibrant, rich (puffery)
+  ✗ Knowledge-gap speculation substituting for [DATA NEEDED] flags
+  ✗ Significance inflation: "stands as a testament", "pivotal moment", "evolving landscape"
+  ✗ Superficial -ing appends to factual sentences asserting importance without evidence
+  ✗ Elegant variation of defined compliance terms across a document
 
 TONE:
   Directness — say it, don't approach it
@@ -373,3 +407,4 @@ TONE:
 - Governed by: `config/constitution.md`
 - Invoked by: all specs prior to output delivery
 - Invoked by: `engine/program-pipeline-orchestrator.md` Phase 6
+- Invokes: `engine/doc-style-guide.md` (Gate 6)

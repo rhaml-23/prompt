@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common-control-catalog.schema.json",
+  "title": "Common Control Catalog",
+  "description": "Maps equivalent controls across frameworks. Enables satisfy-once-apply-many evidence reuse, cross-framework impact analysis, and efficiency reporting. Produced by framework specialist crosswalk operations.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "catalog_entries", "framework_coverage"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "generated_by": {
+      "type": "string",
+      "description": "Agent or process that produced this catalog"
+    },
+    "framework_coverage": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/framework_entry" },
+      "description": "Frameworks included in this catalog"
+    },
+    "catalog_entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/catalog_entry" }
+    },
+    "statistics": { "$ref": "#/$defs/catalog_statistics" }
+  },
+  "$defs": {
+    "framework_entry": {
+      "type": "object",
+      "required": ["framework_id", "framework_name", "version"],
+      "properties": {
+        "framework_id": { "type": "string" },
+        "framework_name": { "type": "string" },
+        "version": { "type": "string" },
+        "total_controls": { "type": "integer", "minimum": 0 },
+        "mapped_controls": { "type": "integer", "minimum": 0 },
+        "specialist_agent": { "type": "string" }
+      }
+    },
+    "catalog_entry": {
+      "type": "object",
+      "required": ["common_control_id", "control_family", "control_objective", "framework_mappings"],
+      "properties": {
+        "common_control_id": {
+          "type": "string",
+          "description": "Unique ID for this common control (e.g. CCC-AC-001)"
+        },
+        "control_family": {
+          "type": "string",
+          "description": "Control family (e.g. Access Control, Audit, Incident Response)"
+        },
+        "control_objective": {
+          "type": "string",
+          "description": "Framework-neutral description of what this control achieves"
+        },
+        "framework_mappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/framework_mapping" },
+          "minItems": 2,
+          "description": "At least 2 framework mappings required for a common control"
+        },
+        "evidence_reuse": { "$ref": "#/$defs/evidence_reuse" },
+        "impact_scope": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Programs affected by this common control"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["exact", "strong", "partial", "weak"],
+          "description": "Mapping confidence level"
+        }
+      }
+    },
+    "framework_mapping": {
+      "type": "object",
+      "required": ["framework_id", "control_id", "control_title"],
+      "properties": {
+        "framework_id": { "type": "string" },
+        "control_id": {
+          "type": "string",
+          "description": "Framework-specific control ID (e.g. AC-2, A.9.2.1, CC6.1)"
+        },
+        "control_title": { "type": "string" },
+        "mapping_type": {
+          "type": "string",
+          "enum": ["equivalent", "superset", "subset", "overlapping", "related"],
+          "description": "How this framework's control relates to the common control"
+        },
+        "mapping_notes": { "type": "string" },
+        "framework_specific_requirements": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Requirements unique to this framework not covered by common control"
+        }
+      }
+    },
+    "evidence_reuse": {
+      "type": "object",
+      "properties": {
+        "reusable": {
+          "type": "boolean",
+          "description": "Whether a single evidence artifact can satisfy all mapped controls"
+        },
+        "reuse_type": {
+          "type": "string",
+          "enum": ["full", "partial", "none"],
+          "description": "Degree to which evidence can be reused across frameworks"
+        },
+        "shared_evidence_types": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Evidence types that satisfy multiple framework controls"
+        },
+        "framework_specific_evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "framework_id": { "type": "string" },
+              "additional_evidence": { "type": "string" }
+            }
+          },
+          "description": "Additional evidence needed per-framework beyond shared evidence"
+        },
+        "efficiency_gain": {
+          "type": "string",
+          "description": "Estimated effort reduction from evidence reuse"
+        }
+      }
+    },
+    "catalog_statistics": {
+      "type": "object",
+      "properties": {
+        "total_common_controls": { "type": "integer" },
+        "total_framework_controls_mapped": { "type": "integer" },
+        "reusable_evidence_percentage": { "type": "number", "minimum": 0, "maximum": 100 },
+        "cross_framework_coverage": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Percentage of framework controls mapped to common controls"
+          }
+        },
+        "top_efficiency_opportunities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "common_control_id": { "type": "string" },
+              "frameworks_covered": { "type": "integer" },
+              "programs_affected": { "type": "integer" },
+              "description": { "type": "string" }
+            }
+          },
+          "maxItems": 10
+        }
+      }
+    }
+  }
+}

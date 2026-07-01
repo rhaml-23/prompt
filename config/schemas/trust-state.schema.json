@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "trust-state.schema.json",
+  "title": "Agent Trust State",
+  "description": "Trust level state for the graduated autonomy system. Tracks per-agent per-action trust levels, promotion/demotion history, and performance statistics.",
+  "type": "object",
+  "required": ["schema_version", "default_level", "trust_state"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "default_level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "Default trust level for new agents"
+    },
+    "trust_state": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "description": "Map of action_type → trust_level for one agent"
+      },
+      "description": "Map of agent_id → action trust levels"
+    },
+    "history": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/trust_change" }
+    },
+    "action_stats": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "$ref": "#/$defs/action_stat" }
+      },
+      "description": "Map of agent_id → action_type → performance stats"
+    }
+  },
+  "$defs": {
+    "trust_change": {
+      "type": "object",
+      "required": ["agent_id", "action_type", "old_level", "new_level", "reason", "timestamp"],
+      "properties": {
+        "agent_id": { "type": "string" },
+        "action_type": { "type": "string" },
+        "old_level": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "new_level": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "reason": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "evidence": { "type": "object" }
+      }
+    },
+    "action_stat": {
+      "type": "object",
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "quality_gate_passed": { "type": "integer", "minimum": 0 },
+        "escalated": { "type": "integer", "minimum": 0 },
+        "review_passed": { "type": "integer", "minimum": 0 },
+        "review_total": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

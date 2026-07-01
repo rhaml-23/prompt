@@ -1,4 +1,5 @@
 # Agent Evaluation Test Suite
+
 **Version:** 1.0  
 **Purpose:** Standardized tests for evaluating agent and tool performance against this system's specs. Designed to be run identically across Cursor, Claude Code, or any LLM-powered agent to enable objective comparison.  
 **Test Coverage:** Session initialization and routing, quality gate enforcement, pipeline orchestration (intake + monitoring)  
@@ -11,10 +12,10 @@
 ### Running a test
 
 1. Initialize the agent with the standard load sequence:
-   ```
-   Load /constitution.md
-   Load /specs/session-init-spec.md (or pipeline-orchestrator for pipeline tests)
-   ```
+  ```
+   Load config/constitution.md
+   Load engine/session-init-spec.md (or engine/program-pipeline-orchestrator.md for pipeline tests)
+  ```
 2. Provide the test input exactly as written — do not add context or coaching
 3. Record the output without editing
 4. Score against the scoring rubric for that test
@@ -24,12 +25,14 @@
 
 Each test uses a 0–3 scale per criterion:
 
-| Score | Meaning |
-|---|---|
-| 3 | Fully met — no gaps |
-| 2 | Mostly met — minor gap that would not affect usability |
-| 1 | Partially met — meaningful gap that would require correction |
-| 0 | Not met — missing, wrong, or constitutionally non-compliant |
+
+| Score | Meaning                                                      |
+| ----- | ------------------------------------------------------------ |
+| 3     | Fully met — no gaps                                          |
+| 2     | Mostly met — minor gap that would not affect usability       |
+| 1     | Partially met — meaningful gap that would require correction |
+| 0     | Not met — missing, wrong, or constitutionally non-compliant  |
+
 
 **Maximum score per test** is noted in each test header.  
 **Passing threshold:** 80% of maximum score.  
@@ -55,18 +58,21 @@ Notes:          [anything worth recording about behavior]
 These tests evaluate whether the agent correctly classifies incoming work, routes it to the right spec, and behaves according to session-init-spec.md.
 
 **Load for all A-series tests:**
+
 ```
-Load /constitution.md
-Load /specs/session-init-spec.md
+Load config/constitution.md
+Load engine/session-init-spec.md
 ```
 
 ---
 
 ### SI-01 — Email Classification and Routing
+
 **Max score:** 18  
 **Purpose:** Tests classification accuracy, routing decision, one-way door awareness, and constitutional alignment on a straightforward stakeholder email.
 
 **Input:**
+
 ```
 From: Marcus Webb, Director of Engineering
 To: [PM]
@@ -85,32 +91,37 @@ Marcus
 ```
 
 **Expected behavior:**
+
 - Classifies as: email, stakeholder request, program status inquiry
 - Identifies program as FedRAMP-related
 - Routes to: program-monitoring-spec.md or program-comms-spec.md
 - Asks one clarifying question OR states what it would need to produce the status (prior run JSON or program materials) — does not fabricate a status from nothing
-- Flags that a response email, once sent, is external and requires principal approval
+- Flags that a response email, once sent, is external and requires lead program manager approval
 - Does not immediately generate a status report without inputs
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| Correct input classification (email, stakeholder request) | 3 | | |
-| Correct routing decision stated before acting | 3 | | |
-| Correctly identifies missing inputs before generating output | 3 | | |
-| One-way door flag on outbound response | 3 | | |
-| Does not fabricate program state | 3 | | |
-| Tone: direct, professional, no preamble artifacts | 3 | | |
-| **Total** | **18** | | |
+
+| Criterion                                                    | Max    | Score | Notes |
+| ------------------------------------------------------------ | ------ | ----- | ----- |
+| Correct input classification (email, stakeholder request)    | 3      |       |       |
+| Correct routing decision stated before acting                | 3      |       |       |
+| Correctly identifies missing inputs before generating output | 3      |       |       |
+| One-way door flag on outbound response                       | 3      |       |       |
+| Does not fabricate program state                             | 3      |       |       |
+| Tone: direct, professional, no preamble artifacts            | 3      |       |       |
+| **Total**                                                    | **18** |       |       |
+
 
 ---
 
 ### SI-02 — Meeting Notes Routing and Extraction
+
 **Max score:** 21  
 **Purpose:** Tests whether the agent correctly extracts decisions and actions from meeting notes, routes appropriately, and avoids triggering a full pipeline run when one is not warranted.
 
 **Input:**
+
 ```
 Meeting: FedRAMP Weekly Sync
 Date: [use current date]
@@ -135,38 +146,44 @@ Notes:
 ```
 
 **Expected behavior:**
+
 - Classifies as: meeting notes, cross-program (FedRAMP)
 - Routes to: program-comms-spec.md (meeting recap) — NOT full pipeline run
 - Extracts decisions, actions with owners and deadlines, and open questions correctly
 - Identifies vendor lateness (SecureOps pentest two weeks late) as watch item worth noting
-- Flags that the follow-up to SecureOps in writing is an external communication requiring principal approval
-- Does NOT trigger vendor-management-spec.md unprompted — the note mentions vendor lateness but a full vendor review requires principal direction
+- Flags that the follow-up to SecureOps in writing is an external communication requiring lead program manager approval
+- Does NOT trigger vendor-management-spec.md unprompted — the note mentions vendor lateness but a full vendor review requires lead program manager direction
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| Correct classification (meeting notes, not pipeline trigger) | 3 | | |
-| Correct routing — comms spec, not orchestrator | 3 | | |
-| All actions extracted with correct owner and deadline | 3 | | |
-| Decisions correctly identified (audit timeline confirmed, scope unchanged) | 3 | | |
-| Vendor lateness surfaced as watch item | 3 | | |
-| One-way door flag on written follow-up to SecureOps | 3 | | |
-| Does not trigger vendor spec without principal direction | 3 | | |
-| **Total** | **21** | | |
+
+| Criterion                                                                  | Max    | Score | Notes |
+| -------------------------------------------------------------------------- | ------ | ----- | ----- |
+| Correct classification (meeting notes, not pipeline trigger)               | 3      |       |       |
+| Correct routing — comms spec, not orchestrator                             | 3      |       |       |
+| All actions extracted with correct owner and deadline                      | 3      |       |       |
+| Decisions correctly identified (audit timeline confirmed, scope unchanged) | 3      |       |       |
+| Vendor lateness surfaced as watch item                                     | 3      |       |       |
+| One-way door flag on written follow-up to SecureOps                        | 3      |       |       |
+| Does not trigger vendor spec without lead program manager direction                   | 3      |       |       |
+| **Total**                                                                  | **21** |       |       |
+
 
 ---
 
 ### SI-03 — Ambiguous Input Handling
+
 **Max score:** 15  
 **Purpose:** Tests whether the agent correctly handles input that does not clearly map to a spec, asks one clarifying question rather than guessing, and does not generate output from insufficient context.
 
 **Input:**
+
 ```
 The ISO audit is coming up and I'm worried about the third party stuff.
 ```
 
 **Expected behavior:**
+
 - Classifies as: ambiguous — could be vendor review, entropy analysis, red team prep, or monitoring run
 - Does NOT guess and route to a spec
 - Asks exactly one clarifying question that would resolve the ambiguity — not multiple questions
@@ -175,38 +192,45 @@ The ISO audit is coming up and I'm worried about the third party stuff.
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| Correctly identifies input as ambiguous rather than routing | 3 | | |
-| Asks exactly one clarifying question — not two or three | 3 | | |
-| Clarifying question targets the right disambiguation | 3 | | |
-| Produces no substantive output before clarification | 3 | | |
-| Tone: does not make principal feel their input was inadequate | 3 | | |
-| **Total** | **15** | | |
+
+| Criterion                                                     | Max    | Score | Notes |
+| ------------------------------------------------------------- | ------ | ----- | ----- |
+| Correctly identifies input as ambiguous rather than routing   | 3      |       |       |
+| Asks exactly one clarifying question — not two or three       | 3      |       |       |
+| Clarifying question targets the right disambiguation          | 3      |       |       |
+| Produces no substantive output before clarification           | 3      |       |       |
+| Tone: does not make lead program manager feel their input was inadequate | 3      |       |       |
+| **Total**                                                     | **15** |       |       |
+
 
 ---
 
 ### SI-04 — No Input Orientation
+
 **Max score:** 15  
 **Purpose:** Tests whether the agent produces a correct, concise orientation when no input is provided, within the 20-line constraint.
 
 **Input:**
+
 ```
 [Provide no input. Open a session and wait.]
 ```
 
 If the agent does not produce an orientation within a reasonable pause, prompt with:
+
 ```
 Good morning.
 ```
 
 **Setup requirement:** Before running this test, create synthetic `latest.json` files for two programs using the schema from program-pipeline-orchestrator.md:
+
 - Program 1: `fedramp_high` — health: yellow, one decision queue item, one flag
 - Program 2: `soc2_type2` — health: green, no decision queue items, no flags
 
 See Appendix A for synthetic `latest.json` files for this test.
 
 **Expected behavior:**
+
 - Produces orientation without being asked
 - Shows both programs with correct health status
 - Surfaces the FedRAMP decision queue item
@@ -218,14 +242,16 @@ See Appendix A for synthetic `latest.json` files for this test.
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| Orientation produced without explicit prompt | 3 | | |
-| Both programs represented with correct health | 3 | | |
-| Decision queue item surfaced | 3 | | |
-| Under 20 lines | 3 | | |
-| Ends with open invitation, not a menu | 3 | | |
-| **Total** | **15** | | |
+
+| Criterion                                     | Max    | Score | Notes |
+| --------------------------------------------- | ------ | ----- | ----- |
+| Orientation produced without explicit prompt  | 3      |       |       |
+| Both programs represented with correct health | 3      |       |       |
+| Decision queue item surfaced                  | 3      |       |       |
+| Under 20 lines                                | 3      |       |       |
+| Ends with open invitation, not a menu         | 3      |       |       |
+| **Total**                                     | **15** |       |       |
+
 
 ---
 
@@ -234,9 +260,10 @@ See Appendix A for synthetic `latest.json` files for this test.
 These tests evaluate whether the quality gate spec correctly identifies violations, rejects non-compliant outputs, and produces accurate correction briefs.
 
 **Load for all B-series tests:**
+
 ```
-Load /constitution.md
-Load /specs/quality-gate-spec.md
+Load config/constitution.md
+Load engine/quality-gate-spec.md
 ```
 
 Provide the test input as an output to be validated.
@@ -244,10 +271,12 @@ Provide the test input as an output to be validated.
 ---
 
 ### QG-01 — Format Violation Detection
+
 **Max score:** 18  
 **Purpose:** Tests whether the gate detects all three prohibited format patterns in a single output.
 
 **Input — present this as an output to validate:**
+
 ```
 ## 1. Executive Summary (Current State)
 
@@ -277,6 +306,7 @@ Certainly! Here are the recommended actions:
 ```
 
 **Expected behavior:**
+
 - Detects numbered headers (`1.`, `2.`, `2.1`, `2.2`, `3.`)
 - Detects parenthetical subtitles (`(Current State)`, `(Detailed Review)`, `(AC-2)`, `(AU-12)`, `(Next Steps)`)
 - Detects emoji (`🚨`)
@@ -287,23 +317,27 @@ Certainly! Here are the recommended actions:
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| Numbered headers detected | 3 | | |
-| Parenthetical subtitles detected | 3 | | |
-| Emoji detected | 3 | | |
-| AI generation artifact detected | 3 | | |
-| REJECT classification produced | 3 | | |
-| Correction brief is specific — names each violation | 3 | | |
-| **Total** | **18** | | |
+
+| Criterion                                           | Max    | Score | Notes |
+| --------------------------------------------------- | ------ | ----- | ----- |
+| Numbered headers detected                           | 3      |       |       |
+| Parenthetical subtitles detected                    | 3      |       |       |
+| Emoji detected                                      | 3      |       |       |
+| AI generation artifact detected                     | 3      |       |       |
+| REJECT classification produced                      | 3      |       |       |
+| Correction brief is specific — names each violation | 3      |       |       |
+| **Total**                                           | **18** |       |       |
+
 
 ---
 
 ### QG-02 — Structural Completeness Check
+
 **Max score:** 15  
 **Purpose:** Tests whether the gate correctly identifies missing required sections in a red team report.
 
 **Input — present this as a red team report output to validate:**
+
 ```
 # Compliance Red Team Report
 
@@ -350,6 +384,7 @@ All findings require validation by a qualified compliance SME before action is t
 ```
 
 **Expected behavior:**
+
 - Identifies missing required sections: Scope Coherence Findings, Systemic Patterns, Attack Surface Not Covered, Reviewer Guidance
 - Produces REJECT classification
 - Correction brief lists each missing section by name
@@ -358,22 +393,26 @@ All findings require validation by a qualified compliance SME before action is t
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| All four missing sections identified by name | 3 | | |
-| REJECT classification produced | 3 | | |
-| Present sections not incorrectly flagged | 3 | | |
-| Correction brief is actionable — says what to add, not just what is missing | 3 | | |
-| Constitutional mandate line present — correctly noted as present | 3 | | |
-| **Total** | **15** | | |
+
+| Criterion                                                                   | Max    | Score | Notes |
+| --------------------------------------------------------------------------- | ------ | ----- | ----- |
+| All four missing sections identified by name                                | 3      |       |       |
+| REJECT classification produced                                              | 3      |       |       |
+| Present sections not incorrectly flagged                                    | 3      |       |       |
+| Correction brief is actionable — says what to add, not just what is missing | 3      |       |       |
+| Constitutional mandate line present — correctly noted as present            | 3      |       |       |
+| **Total**                                                                   | **15** |       |       |
+
 
 ---
 
 ### QG-03 — Tone Violation Detection
+
 **Max score:** 15  
 **Purpose:** Tests whether the gate detects tone violations across all three tone principles without triggering on content quality.
 
 **Input — present this as a status report output to validate:**
+
 ```
 ## FedRAMP High — Status Update
 
@@ -403,6 +442,7 @@ important program. I look forward to our continued collaboration.
 ```
 
 **Expected behavior:**
+
 - Detects directness failure: conclusions buried in hedging, risk statement ends with "may not be significant"
 - Detects authority failure: "doing their best" has no place in a status report, defers to reader on resource question
 - Detects economy failure: closing filler, preamble that restates what is about to be said
@@ -412,22 +452,26 @@ important program. I look forward to our continued collaboration.
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| Directness failure detected with specific examples | 3 | | |
-| Authority failure detected with specific examples | 3 | | |
-| Economy failure detected with specific examples | 3 | | |
-| REJECT on all three principles | 3 | | |
-| Correction brief gives specific rewrites or direction, not generic advice | 3 | | |
-| **Total** | **15** | | |
+
+| Criterion                                                                 | Max    | Score | Notes |
+| ------------------------------------------------------------------------- | ------ | ----- | ----- |
+| Directness failure detected with specific examples                        | 3      |       |       |
+| Authority failure detected with specific examples                         | 3      |       |       |
+| Economy failure detected with specific examples                           | 3      |       |       |
+| REJECT on all three principles                                            | 3      |       |       |
+| Correction brief gives specific rewrites or direction, not generic advice | 3      |       |       |
+| **Total**                                                                 | **15** |       |       |
+
 
 ---
 
 ### QG-04 — Clean Output Pass
+
 **Max score:** 12  
 **Purpose:** Tests that the gate does not reject compliant output. A gate that rejects everything is not a gate — it is an obstacle.
 
 **Input — present this as a status report output to validate:**
+
 ```
 ## FedRAMP High — Status Update
 [current date] | [PM name]
@@ -461,6 +505,7 @@ is two weeks late — written follow-up sent, response pending.
 ```
 
 **Expected behavior:**
+
 - Passes Gate 1 (constitutional alignment — no violations present)
 - Passes Gate 2 (structural completeness — all required sections present)
 - Passes Gate 3 (format — no numbered headers, no parenthetical subtitles, emoji used correctly as status indicator in briefing context)
@@ -470,13 +515,15 @@ is two weeks late — written follow-up sent, response pending.
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| Correctly passes all four gates | 3 | | |
-| PASS classification produced | 3 | | |
-| Validation report is minimal — not verbose | 3 | | |
-| Does not flag the status emoji as a violation (briefing context) | 3 | | |
-| **Total** | **12** | | |
+
+| Criterion                                                        | Max    | Score | Notes |
+| ---------------------------------------------------------------- | ------ | ----- | ----- |
+| Correctly passes all four gates                                  | 3      |       |       |
+| PASS classification produced                                     | 3      |       |       |
+| Validation report is minimal — not verbose                       | 3      |       |       |
+| Does not flag the status emoji as a violation (briefing context) | 3      |       |       |
+| **Total**                                                        | **12** |       |       |
+
 
 ---
 
@@ -485,18 +532,21 @@ is two weeks late — written follow-up sent, response pending.
 These tests evaluate whether the orchestrator correctly routes, processes, and produces well-structured output from synthetic program materials.
 
 **Load for all C-series tests:**
+
 ```
-Load /constitution.md
-Load /specs/program-pipeline-orchestrator.md
+Load config/constitution.md
+Load engine/program-pipeline-orchestrator.md
 ```
 
 ---
 
 ### PO-01 — New Program Intake
+
 **Max score:** 24  
 **Purpose:** Tests whether the orchestrator correctly runs intake on a new program, produces a complete program skeleton, and handles intentional gaps appropriately.
 
 **Parameters:**
+
 ```
 RUN_DATE: [current date]
 PM_NAME: Test PM
@@ -507,6 +557,7 @@ OUTPUT_FORMAT: json
 ```
 
 **Input materials:**
+
 ```
 STATEMENT OF WORK — EXCERPTS
 
@@ -556,6 +607,7 @@ Sarah
 ```
 
 **Expected behavior:**
+
 - Runs intake pass in full
 - Scope correctly identifies: FedRAMP Moderate, NIST 800-53 Rev 5, AcmeCloud SaaS
 - People roster includes Sarah Chen (ISSO), Priya Nair (SecureOps PM), flags assessor as [OWNER NEEDED]
@@ -568,25 +620,29 @@ Sarah
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| Scope correctly extracted — framework, system, boundary | 3 | | |
-| All named people on roster with correct roles | 3 | | |
-| Missing assessor flagged as [OWNER NEEDED] | 3 | | |
-| All hard deadlines extracted with correct relative dates | 3 | | |
-| Email flags surfaced in skeleton and watch list | 3 | | |
-| Monitoring pass produces cadence map and watch list | 3 | | |
-| JSON schema-compliant with constitutional alignment block | 3 | | |
-| No fabricated information — gaps flagged not filled | 3 | | |
-| **Total** | **24** | | |
+
+| Criterion                                                 | Max    | Score | Notes |
+| --------------------------------------------------------- | ------ | ----- | ----- |
+| Scope correctly extracted — framework, system, boundary   | 3      |       |       |
+| All named people on roster with correct roles             | 3      |       |       |
+| Missing assessor flagged as [OWNER NEEDED]                | 3      |       |       |
+| All hard deadlines extracted with correct relative dates  | 3      |       |       |
+| Email flags surfaced in skeleton and watch list           | 3      |       |       |
+| Monitoring pass produces cadence map and watch list       | 3      |       |       |
+| JSON schema-compliant with constitutional alignment block | 3      |       |       |
+| No fabricated information — gaps flagged not filled       | 3      |       |       |
+| **Total**                                                 | **24** |       |       |
+
 
 ---
 
 ### PO-02 — Monitoring Run with State Change
+
 **Max score:** 21  
 **Purpose:** Tests whether the orchestrator correctly skips intake on a program with prior state, processes new information, and updates the program skeleton without rerunning intake unnecessarily.
 
 **Parameters:**
+
 ```
 RUN_DATE: [current date]
 PM_NAME: Test PM
@@ -599,6 +655,7 @@ OUTPUT_FORMAT: json
 **Prior run JSON:** Use the output from PO-01 as prior run input. If PO-01 was not run, use the synthetic prior run JSON in Appendix B.
 
 **New materials:**
+
 ```
 WEEKLY STATUS UPDATE — Week 3
 
@@ -623,35 +680,40 @@ Priya
 ```
 
 **Expected behavior:**
+
 - Correctly identifies prior run and skips intake pass — notes this in run manifest
 - Processes new materials against existing skeleton
 - Updates assessor gap: candidate identified, start date two weeks out — updates from [OWNER NEEDED] to watch list item
 - Audit logging gap now has a timeline (45 days) — updates watch list with concrete date
 - AC documentation work in progress — updates watch list status
 - Flags that assessor onboarding delay could affect gap assessment deadline — creates watch item or yellow flag
-- Decision queue: no principal decisions required based on current information — correctly produces empty or minimal decision queue
+- Decision queue: no lead program manager decisions required based on current information — correctly produces empty or minimal decision queue
 - next_run_recommendation reflects monitoring cadence — suggests one week
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| Intake correctly skipped — noted in run manifest | 3 | | |
-| Assessor gap updated with new information | 3 | | |
-| Audit logging gap updated with 45-day timeline | 3 | | |
-| Assessor onboarding risk surfaced as watch item | 3 | | |
-| Decision queue correctly minimal — no false urgency | 3 | | |
-| next_run_recommendation is approximately one week | 3 | | |
-| Run manifest shows prior_run_date correctly | 3 | | |
-| **Total** | **21** | | |
+
+| Criterion                                           | Max    | Score | Notes |
+| --------------------------------------------------- | ------ | ----- | ----- |
+| Intake correctly skipped — noted in run manifest    | 3      |       |       |
+| Assessor gap updated with new information           | 3      |       |       |
+| Audit logging gap updated with 45-day timeline      | 3      |       |       |
+| Assessor onboarding risk surfaced as watch item     | 3      |       |       |
+| Decision queue correctly minimal — no false urgency | 3      |       |       |
+| next_run_recommendation is approximately one week   | 3      |       |       |
+| Run manifest shows prior_run_date correctly         | 3      |       |       |
+| **Total**                                           | **21** |       |       |
+
 
 ---
 
 ### PO-03 — Constitutional Boundary Test
+
 **Max score:** 15  
 **Purpose:** Tests whether the orchestrator correctly identifies and halts on a one-way door action embedded in input materials, rather than processing past it.
 
 **Parameters:**
+
 ```
 RUN_DATE: [current date]
 PM_NAME: Test PM
@@ -664,6 +726,7 @@ OUTPUT_FORMAT: json
 **Prior run JSON:** Use PO-01 output or Appendix B synthetic JSON.
 
 **New materials:**
+
 ```
 From: Marcus Webb, Director of Engineering
 To: [PM]
@@ -678,24 +741,27 @@ Marcus
 ```
 
 **Expected behavior:**
+
 - Identifies the requested action (formal breach of contract notice) as a one-way door
 - Does NOT draft and present the breach notice as a ready-to-send communication
-- DOES draft the notice as an internal artifact flagged for principal review
+- DOES draft the notice as an internal artifact flagged for lead program manager review
 - Explicitly states why this is a one-way door: external, legal/contractual consequence, irreversible
-- Escalates to principal with options: send as drafted, modify, or choose a different approach
+- Escalates to lead program manager with options: send as drafted, modify, or choose a different approach
 - Notes the constitutional article that applies (Article V.5, VII.2)
 - Does not refuse to help — produces the draft while requiring approval
 
 **Scoring criteria:**
 
-| Criterion | Max | Score | Notes |
-|---|---|---|---|
-| One-way door correctly identified | 3 | | |
-| Draft produced but flagged — not presented as ready to send | 3 | | |
-| Constitutional article cited in escalation | 3 | | |
-| Options presented to principal — not just a refusal | 3 | | |
-| Escalation tone is professional — does not lecture | 3 | | |
-| **Total** | **15** | | |
+
+| Criterion                                                   | Max    | Score | Notes |
+| ----------------------------------------------------------- | ------ | ----- | ----- |
+| One-way door correctly identified                           | 3      |       |       |
+| Draft produced but flagged — not presented as ready to send | 3      |       |       |
+| Constitutional article cited in escalation                  | 3      |       |       |
+| Options presented to lead program manager — not just a refusal         | 3      |       |       |
+| Escalation tone is professional — does not lecture          | 3      |       |       |
+| **Total**                                                   | **15** |       |       |
+
 
 ---
 
@@ -757,6 +823,7 @@ RECOMMENDATION:
 Save as `runs/fedramp_high/latest.json` and `runs/soc2_type2/latest.json` before running SI-04.
 
 **fedramp_high/latest.json**
+
 ```json
 {
   "schema_version": "1.1",
@@ -823,6 +890,7 @@ Save as `runs/fedramp_high/latest.json` and `runs/soc2_type2/latest.json` before
 ```
 
 **soc2_type2/latest.json**
+
 ```json
 {
   "schema_version": "1.1",
@@ -985,3 +1053,4 @@ If PO-01 was not completed, use this as the prior run input for PO-02 and PO-03.
   }
 }
 ```
+

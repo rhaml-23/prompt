@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agent-message.schema.json",
+  "title": "Agent Message Envelope",
+  "description": "Standard envelope for inter-agent communication on the message bus.",
+  "type": "object",
+  "required": ["id", "type", "sender", "target", "timestamp", "payload"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique message identifier"
+    },
+    "type": {
+      "type": "string",
+      "description": "Message type (e.g. REVIEW_REQUEST, INTEL_ALERT, STATE_UPDATE)",
+      "enum": [
+        "BEGIN_PIPELINE",
+        "RUN_COMPLETE",
+        "STATE_UPDATE",
+        "REVIEW_REQUEST",
+        "REVIEW_COMPLETE",
+        "GATE_CHECK",
+        "GATE_RESULT",
+        "INTEL_SCAN",
+        "INTEL_ALERT",
+        "INTEL_REPORT",
+        "CRITICAL_ALERT",
+        "FRAMEWORK_QUERY",
+        "FRAMEWORK_UPDATE",
+        "FRAMEWORK_DELTA",
+        "CONTROL_MAPPING",
+        "CROSSWALK_REQUEST",
+        "CROSSWALK_RESPONSE",
+        "REDTEAM_REQUEST",
+        "ENTROPY_REQUEST",
+        "PORTFOLIO_REQUEST",
+        "PORTFOLIO_BRIEFING",
+        "ROUTE_WORK",
+        "ROUTE_RECOMMENDATION",
+        "ROUTING_DECISION",
+        "CROSS_PROGRAM_ALERT",
+        "ESCALATION",
+        "SPEC_IMPROVEMENT",
+        "EVIDENCE_CHECK",
+        "EVIDENCE_ALERT",
+        "EVIDENCE_REPORT",
+        "CCC_UPDATE",
+        "IMPACT_ANALYSIS",
+        "TRUST_PROMOTION",
+        "TRUST_DEMOTION",
+        "METRICS_REPORT",
+        "PREDICTION_REPORT",
+        "CIRCUIT_BREAKER"
+      ]
+    },
+    "sender": {
+      "type": "string",
+      "description": "Agent name or ID of the sender"
+    },
+    "target": {
+      "type": "string",
+      "description": "Agent name, ID, or __broadcast__ for all agents"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Message-type-specific payload"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "ID linking related messages in a workflow"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["critical", "high", "normal", "low"],
+      "default": "normal"
+    },
+    "acknowledged": {
+      "type": "boolean",
+      "default": false
+    },
+    "acknowledged_by": {
+      "type": "string"
+    },
+    "acknowledged_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

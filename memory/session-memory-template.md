@@ -26,7 +26,7 @@ INSTRUCTIONS FOR AGENT:
 
 ## Decision Log
 
-<!-- Decisions made by the principal during sessions. Never expire. -->
+<!-- Decisions made by the lead program manager during sessions. Never expire. -->
 
 | Date | Decision | Rationale | Revisit condition |
 |---|---|---|---|
@@ -36,9 +36,9 @@ INSTRUCTIONS FOR AGENT:
 
 ## Deferred Items
 
-<!-- Things the principal has explicitly chosen not to address yet. -->
+<!-- Things the lead program manager has explicitly chosen not to address yet. -->
 
-| Item | First deferred | Times deferred | Principal's stated reason |
+| Item | First deferred | Times deferred | Lead program manager's stated reason |
 |---|---|---|---|
 | | | | |
 
@@ -55,7 +55,7 @@ INSTRUCTIONS FOR AGENT:
 **Decisions made:** [any decisions from the decision log added this session]  
 **Deferred:** [anything explicitly pushed to a future session]  
 **Patterns noticed:** [anything the agent surfaced as drift or avoidance]  
-**Principal direction on patterns:** [how the principal responded]  
+**Lead program manager direction on patterns:** [how the lead program manager responded]  
 **State at close:** [one sentence — where things stand]  
 **Next session priority:** [what the agent recommends tackling first next time]  
 

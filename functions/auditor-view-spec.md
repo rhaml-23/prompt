@@ -14,7 +14,7 @@ inputs:
   - evidence_calendar
 outputs:
   - auditor_dashboard_html
-governed_by: /config/constitution.md
+governed_by: config/constitution.md
 standalone: true
 entry_point: true
 depends_on:
@@ -26,7 +26,7 @@ depends_on:
 **Version:** 1.0
 **Purpose:** Generate a read-only, per-program compliance posture dashboard suitable for auditor review. Demonstrates continuous monitoring activity, control coverage status, risk register posture, and evidence collection cadence. Does not expose internal program management detail, decision queues, or session-level operational data.
 **Governed by:** `/config/constitution.md`
-**Output:** Static HTML file — generated on demand, no live data connection.
+**Output:** Static HTML file — generated on demand via this spec OR automatically on every CI push to main via `scripts/build_pages.py` (Step 1, sub-step 4).
 **Audience:** Third-party auditors, compliance reviewers, oversight stakeholders.
 **Maintainer:** `[your name/handle]`
 
@@ -59,7 +59,7 @@ Four sections, nothing more:
 - Draft communications or staged outputs
 - Watch list items or internal health classifications
 - Any field tagged `internal_only: true` in the run JSON
-- Principal name or organizational chart detail beyond program ownership fields
+- Lead program manager name or organizational chart detail beyond program ownership fields
 
 ---
 
@@ -258,3 +258,4 @@ BEGIN AUDITOR VIEW
 - Reads: `/runs/[PROGRAM]/latest.json`, `/logs/provenance.jsonl`
 - Writes: `/ui/[PROGRAM]-auditor-[DATE].html`
 - Rendered by: `scripts/auditor_view_renderer.py`
+- Auto-invoked by: `scripts/build_pages.py` on every push to main (Step 1, sub-step 4)

@@ -1,12 +1,13 @@
 ---
 resource_type: spec
-version: "1.1"
+version: "1.2"
 domain: program-management
 triggers:
   - new_program
   - monitoring_run
   - vendor_review
   - full_run
+  - post_audit_review
   - unknown
 inputs:
   - prior_run_json
@@ -20,20 +21,23 @@ outputs:
 governed_by: config/constitution.md
 entry_point: true
 invokes:
-  - program-intake-spec.md
-  - program-monitoring-spec.md
-  - vendor-management-spec.md
-  - quality-gate-spec.md
-  - program-comms-spec.md
-  - control-coverage-spec.md
-  - risk-register-spec.md
+  - functions/program-intake-spec.md
+  - functions/program-monitoring-spec.md
+  - functions/vendor-management-spec.md
+  - engine/quality-gate-spec.md
+  - functions/program-comms-spec.md
+  - functions/control-coverage-spec.md
+  - functions/risk-register-spec.md
+  - functions/product-evidence-spec.md
+  - functions/post-audit-spec.md
+  - engine/crash-resilience-spec.md
 ---
 
 # Program Pipeline Orchestrator
-**Version:** 1.1  
+**Version:** 1.2  
 **Purpose:** State-aware orchestration of the program management pipeline — routes execution across specs based on program state and available artifacts  
-**Governed by:** `/constitution.md` — load and apply before any execution  
-**Depends On:** `program-intake-spec.md`, `program-monitoring-spec.md`, `vendor-management-spec.md`  
+**Governed by:** `config/constitution.md` — load and apply before any execution  
+**Depends On:** `functions/program-intake-spec.md`, `functions/program-monitoring-spec.md`, `functions/vendor-management-spec.md`  
 **Output:** Single unified JSON envelope — all outputs, run manifest, aggregated flags  
 **Portability:** Executable by any capable LLM (Claude, Gemini, GPT, Ollama local models)  
 **Maintainer:** `[your name/handle]`  
@@ -44,14 +48,14 @@ invokes:
 
 Load `config/constitution.md` before any execution. Active rules:
 
-- **One-way door decisions require principal approval** (V.5, VII.2) — flag and halt if any action is irreversible or externally consequential
+- **One-way door decisions require lead program manager approval** (V.5, VII.2) — flag and halt if any action is irreversible or externally consequential
 - **Say the true thing** (IV.1) — never soften, omit, or reframe a finding
 - **Protect the downstream** (IV.2) — every phase output must be complete and flagged where uncertain
 - **Run the alignment test** (VI) before final output — Protection, Flow, Truth
 
 Decision not covered by this spec or constitution → escalate via Article VII.3.
 
-File not at expected path → search repo recursively before interrupting principal. Note actual path in run manifest.
+File not at expected path → search repo recursively before interrupting lead program manager. Note actual path in run manifest.
 
 ---
 
@@ -63,7 +67,7 @@ File not at expected path → search repo recursively before interrupting princi
 RUN_DATE: [YYYY-MM-DD]
 PM_NAME: [your name or handle]
 PROGRAM_NAME: [program name or "unknown"]
-INTENT: [new_program | monitoring_run | vendor_review | full_run | unknown]
+INTENT: [new_program | monitoring_run | vendor_review | full_run | post_audit_review | unknown]
 PRIOR_RUN: [yes | no]
 OUTPUT_FORMAT: json
 ```
@@ -86,7 +90,7 @@ BEGIN PIPELINE
 
 ## Persona Definition
 
-Principal-level program operations orchestrator under the Professional Intent Constitution. Assess pipeline state, determine warranted passes, execute in correct order, produce a single structured output. Do not re-run completed work unless state has changed or `INTENT: full_run`. Infer from available data, flag what cannot be resolved, always produce output. Escalate on one-way door ambiguity.
+Lead program manager-level program operations orchestrator under the Professional Intent Constitution. Assess pipeline state, determine warranted passes, execute in correct order, produce a single structured output. Do not re-run completed work unless state has changed or `INTENT: full_run`. Infer from available data, flag what cannot be resolved, always produce output. Escalate on one-way door ambiguity.
 
 ---
 
@@ -99,7 +103,7 @@ Before any processing begins, confirm:
 ```
 □ constitution.md has been loaded and applied
 □ No one-way door decisions are embedded in the current intent
-□ All outputs from this run will be internal until principal review
+□ All outputs from this run will be internal until lead program manager review
 □ Alignment test will be applied before final output assembly
 ```
 
@@ -139,19 +143,21 @@ TRIAGE:
 
 #### 1c — Routing Decision
 
-| Condition | Run Intake | Run Monitoring | Run Vendor |
-|---|---|---|---|
-| New program, no prior run | ✓ | ✓ if materials support it | ✓ if vendor exists |
-| Existing program, first pipeline run | ✓ | ✓ | ✓ if vendor exists |
-| Monitoring run, intake complete | ✗ | ✓ | ✓ if vendor watch items exist |
-| Vendor review only | ✗ | ✗ | ✓ |
-| Full run requested | ✓ | ✓ | ✓ if vendor exists |
-| Monitoring run, no new materials | ✗ | ✓ (use prior skeleton) | ✓ if vendor score < 3.1 |
+| Condition | Run Intake | Run Monitoring | Run Vendor | Run Post-Audit |
+|---|---|---|---|---|
+| New program, no prior run | ✓ | ✓ if materials support it | ✓ if vendor exists | ✗ |
+| Existing program, first pipeline run | ✓ | ✓ | ✓ if vendor exists | ✗ |
+| Monitoring run, intake complete | ✗ | ✓ | ✓ if vendor watch items exist | ✗ |
+| Vendor review only | ✗ | ✗ | ✓ | ✗ |
+| Full run requested | ✓ | ✓ | ✓ if vendor exists | ✓ if audit materials provided |
+| Monitoring run, no new materials | ✗ | ✓ (use prior skeleton) | ✓ if vendor score < 3.1 | ✗ |
+| Post-audit review | ✗ | ✗ | ✗ | ✓ |
 
 **Skipping rules:**
 - Skip Intake if: completed intake exists in prior JSON AND no scope-changing materials provided
 - Skip Monitoring if: intent is `vendor_review` only
 - Skip Vendor if: no vendor involved
+- Skip Post-Audit if: no audit materials provided AND intent is not `post_audit_review`
 - Never skip if `INTENT: full_run`
 
 ---
@@ -170,6 +176,33 @@ Execute `program-monitoring-spec.md` using `intake_output` and any new materials
 
 ### Phase 4 — Vendor Pass (conditional)
 Execute `vendor-management-spec.md` using `intake_output`, `monitoring_output`, and vendor materials. Store as `vendor_output`.
+
+---
+
+### Phase 4c — Post-Audit Pass (conditional)
+
+Execute `functions/post-audit-spec.md` when `INTENT: post_audit_review` OR when `INTENT: full_run` and audit materials are present in the input. Store as `post_audit_output`.
+
+Pass to the spec:
+- Audit report and findings list from input materials
+- `prior_run_json` — the current `runs/[PROGRAM]/latest.json`
+- `POST_AUDIT_MODE: full_retrospective` when `INTENT: full_run`; `POST_AUDIT_MODE: standard` when `INTENT: post_audit_review` (override with explicit parameter if provided)
+
+When `INTENT: post_audit_review`, skip Phases 2–4 (Intake, Monitoring, Vendor) unless additional materials warrant them. Resume at Phase 4c, then continue to Phase 5.
+
+---
+
+### Phase 4b — Mid-run checkpointing (crash resilience)
+
+If the run may span multiple sessions or risk interruption before Phase 6 completes, persist progress:
+
+1. **Draft run JSON** — Write or update `runs/[PROGRAM]/draft-run.json` with the partial pipeline envelope. Set `run_manifest.run_notes` to begin with `WIP — checkpoint` and include which phases completed. Conform to `config/schemas/run-output.schema.json` where possible; omit keys for phases not yet executed.
+2. **Optional generic checkpoint** — For work that does not map cleanly into the run envelope, also write `data/[PROGRAM]/checkpoints/pipeline-[RUN_DATE].json` per `engine/crash-resilience-spec.md`.
+3. **Atomic writes** — Use `runtime/ide.py` (`FileStateBackend.write_draft_run` / `write_work_checkpoint`) so partial files are not torn on crash.
+
+**On resume:** Read `draft-run.json` and continue from the next incomplete phase. Do not copy draft to `latest.json` until Phase 6 passes.
+
+**On successful completion:** Write `[date]-run.json` and `latest.json` as usual, remove `draft-run.json`, mark any pipeline checkpoint `complete`.
 
 ---
 
@@ -192,7 +225,7 @@ TRUTH:
   □ Are all conflicts labeled [CONFLICT — VERIFY]?
 ```
 
-Revise any failing output before Phase 6. Escalate any one-way door finding to principal.
+Revise any failing output before Phase 6. Escalate any one-way door finding to lead program manager.
 
 ---
 
@@ -202,7 +235,7 @@ Execute `engine/quality-gate-spec.md` against all outputs produced this run.
 
 On PASS: proceed to Phase 7.
 On REJECT: regenerate once with correction brief, re-validate, proceed to Phase 7 if passing.
-On second failure: escalate to principal with both outputs and failure detail. Do not proceed to Phase 7 until principal directs.
+On second failure: escalate to lead program manager with both outputs and failure detail. Do not proceed to Phase 7 until lead program manager directs.
 
 ---
 
@@ -298,6 +331,26 @@ On second failure: escalate to principal with both outputs and failure detail. D
     },
     "draft_communications": [{"type": "weekly_checkin | remediation_notice | escalation_notice | leadership_briefing", "to": "", "channel": "", "subject": "", "body": ""}]
   },
+  "post_audit_output": {
+    "source": "this_run | prior_run_YYYY-MM-DD | null",
+    "audit_type": "external | surveillance | internal | null",
+    "audit_cycle": "",
+    "post_audit_mode": "standard | full_retrospective | null",
+    "findings_summary": {
+      "total": 0,
+      "by_severity": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+      "by_disposition": {"closed": 0, "open": 0, "contested": 0},
+      "non_durable_remediation_count": 0,
+      "recurrence_count": 0
+    },
+    "corrective_actions_count": 0,
+    "artifacts": {
+      "lessons_learned_report": "",
+      "corrective_action_plan": "",
+      "program_improvement_items": "",
+      "feed_forward_artifact": ""
+    }
+  },
   "flags": {
     "owner_needed": [],
     "date_needed": [],
@@ -355,8 +408,15 @@ If running via LLM without script access, append the equivalent JSON entry manua
 ---
 
 ## Companion Specs
-- `/constitution.md` ← governs all
-- `/specs/program-intake-spec.md`
-- `/specs/program-monitoring-spec.md`
-- `/specs/vendor-management-spec.md`
-- `/specs/calendar-output-spec.md`
+- `config/constitution.md` ← governs all
+- `engine/crash-resilience-spec.md` ← mid-run checkpoints and `draft-run.json`
+- `functions/program-intake-spec.md`
+- `functions/program-monitoring-spec.md`
+- `functions/vendor-management-spec.md`
+- `functions/program-comms-spec.md`
+- `functions/control-coverage-spec.md`
+- `functions/risk-register-spec.md`
+- `functions/product-evidence-spec.md`
+- `functions/post-audit-spec.md`
+- `functions/calendar-output-spec.md`
+- `engine/quality-gate-spec.md`

@@ -34,7 +34,7 @@ depends_on:
 
 ## Constitutional Guidance
 
-Protect the downstream (IV.2) — memory files are the agent's long-term context. Compression that silently loses a decision or accepted risk is a defect that propagates into every future session. Say the true thing (IV.1) — the housekeeping report states what was compressed, what was preserved, and what requires principal attention. Prefer reversibility (IV.3) — archive before compress, never delete source entries until the archive write is confirmed.
+Protect the downstream (IV.2) — memory files are the agent's long-term context. Compression that silently loses a decision or accepted risk is a defect that propagates into every future session. Say the true thing (IV.1) — the housekeeping report states what was compressed, what was preserved, and what requires lead program manager attention. Prefer reversibility (IV.3) — archive before compress, never delete source entries until the archive write is confirmed.
 
 ---
 
@@ -93,7 +93,7 @@ Before any modification, verify file integrity.
 [HOUSEKEEPING] INTEGRITY FAILURE — decisions log line count decreased.
 Expected ≥ [prior count] lines. Found [n] lines.
 This indicates manual deletion from an append-only log.
-Do not proceed. Notify principal immediately.
+Do not proceed. Notify lead program manager immediately.
 ```
 Stop and escalate. Do not compress anything until the log is restored.
 
@@ -129,7 +129,7 @@ For each session entry in Recent Sessions, scan for:
 
 **Deferred item check:** Every item in session entries marked as deferred must appear in the Deferred Items table. If missing, add it before compressing.
 
-**Pattern check:** Every pattern surfaced in session entries must appear in the Patterns table with a count. If a pattern appears in 3+ session entries with no principal resolution, flag it:
+**Pattern check:** Every pattern surfaced in session entries must appear in the Patterns table with a count. If a pattern appears in 3+ session entries with no lead program manager resolution, flag it:
 ```
 [HOUSEKEEPING] Pattern persisting without resolution: "[pattern]"
 First noted: [date] | Sessions unresolved: [n]
@@ -240,7 +240,7 @@ Update the state file to reflect current program state:
    - Flag items deferred 3+ times with `⚠` prefix
 
 5. Prune Patterns table:
-   - Remove patterns where principal direction is recorded as resolved
+   - Remove patterns where lead program manager direction is recorded as resolved
    - Flag patterns unresolved after 3+ sessions
 
 Narrate:
@@ -293,7 +293,7 @@ NEXT HOUSEKEEPING: [today + 90 days]
 
 ```bash
 python scripts/provenance_log.py write \
-  --spec "functions/memory-housekeeping-spec.md" \
+  --spec "memory/memory-housekeeping-spec.md" \
   --output "memory/[PROGRAM]-state.md" \
   --output-type memory_maintenance \
   --program "[PROGRAM]" \

@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-state.schema.json",
+  "title": "Portfolio State",
+  "description": "Cross-program portfolio state produced by the portfolio orchestrator and consumed by the coordinator. Each program agent writes its program_summary on every run. The coordinator aggregates into the portfolio view.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "generated_by", "programs", "cross_program_signals", "portfolio_health"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "generated_by": {
+      "type": "string",
+      "description": "Agent ID or spec that produced this state"
+    },
+    "generated": {
+      "type": "string",
+      "description": "Human-readable generation timestamp for display"
+    },
+    "programs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/program_summary" }
+    },
+    "cross_program_signals": { "$ref": "#/$defs/cross_program_signals" },
+    "cross_program": { "$ref": "#/$defs/cross_program_signals" },
+    "portfolio_health": { "$ref": "#/$defs/portfolio_health" },
+    "suggested_actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/suggested_action" },
+      "maxItems": 5
+    },
+    "near_term_deadlines": {
+      "type": "array",
+      "description": "Items due within the near-term horizon across all programs.",
+      "items": { "$ref": "#/$defs/deadline_item" }
+    },
+    "nearest_deadline": { "type": "string", "format": "date" },
+    "nearest_deadline_item": { "type": "string" },
+    "nearest_deadline_program": { "type": "string" },
+    "total_decisions_pending": { "type": "integer" },
+    "shared_vendors_at_risk": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  },
+  "$defs": {
+    "program_summary": {
+      "type": "object",
+      "required": ["program_slug", "health", "one_line_status", "last_run_date", "frameworks"],
+      "properties": {
+        "program_slug": { "type": "string" },
+        "slug": { "type": "string", "description": "Alias for program_slug used in rendering" },
+        "display_name": { "type": "string" },
+        "health": {
+          "type": "string",
+          "enum": ["red", "yellow", "green", "unknown"]
+        },
+        "health_reason": { "type": "string" },
+        "one_line_status": { "type": "string" },
+        "summary": { "type": "string", "description": "Extended status summary for display" },
+        "last_run_date": { "type": "string", "format": "date" },
+        "last_run": { "type": "string", "description": "Formatted last run date/label for display" },
+        "days_since_run": { "type": "integer", "minimum": 0 },
+        "run_staleness_days": { "type": "integer", "minimum": 0 },
+        "frameworks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "framework": { "type": "string", "description": "Primary framework name for display" },
+        "phase": { "type": "string" },
+        "open_decision_count": { "type": "integer", "minimum": 0 },
+        "oldest_decision_days": { "type": "integer", "minimum": 0 },
+        "blocker_count": { "type": "integer", "minimum": 0 },
+        "escalation_count": { "type": "integer", "minimum": 0 },
+        "owner_gap_count": { "type": "integer", "minimum": 0 },
+        "next_run_recommended": { "type": "string", "format": "date" },
+        "next_run_intent": { "type": "string" },
+        "next_run_due": { "type": "string", "format": "date" },
+        "blockers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/named_item" }
+        },
+        "escalations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/named_item" }
+        },
+        "decision_queue": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/named_item" }
+        },
+        "drafts_staged": { "type": "integer" },
+        "intel_items_pending": { "type": "integer" },
+        "top_risk": { "type": "string" },
+        "finding": { "type": "string" },
+        "owner": { "type": "string" },
+        "priority": { "type": "string" },
+        "age": { "type": ["integer", "string"] },
+        "date": { "type": "string" },
+        "item": { "type": "string" },
+        "vendors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "score": { "type": "number" },
+              "trend": { "type": "string", "enum": ["improving", "stable", "declining", "insufficient_data"] }
+            }
+          }
+        },
+        "technology_profile": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Key technologies for intel matching"
+        }
+      }
+    },
+    "named_item": {
+      "type": "object",
+      "description": "Generic named item used in blockers, escalations, and decision queues.",
+      "properties": {
+        "item": { "type": "string" },
+        "name": { "type": "string" },
+        "owner": { "type": "string" },
+        "priority": { "type": "string" },
+        "age": { "type": ["integer", "string"] },
+        "date": { "type": "string" },
+        "finding": { "type": "string" },
+        "summary": { "type": "string" }
+      }
+    },
+    "deadline_item": {
+      "type": "object",
+      "description": "Item with an upcoming deadline surfaced by the portfolio renderer.",
+      "properties": {
+        "item": { "type": "string" },
+        "name": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "owner": { "type": "string" },
+        "priority": { "type": "string" },
+        "program": { "type": "string" }
+      }
+    },
+    "cross_program_signals": {
+      "type": "object",
+      "properties": {
+        "shared_vendor_risk": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "vendor": { "type": "string" },
+              "programs": { "type": "array", "items": { "type": "string" } },
+              "risk_summary": { "type": "string" }
+            }
+          }
+        },
+        "deadline_clustering": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date_range": { "type": "string" },
+              "programs": { "type": "array", "items": { "type": "string" } },
+              "event_count": { "type": "integer" }
+            }
+          }
+        },
+        "resource_contention": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "resource": { "type": "string" },
+              "programs": { "type": "array", "items": { "type": "string" } },
+              "contention_type": { "type": "string" }
+            }
+          }
+        },
+        "intel_overlap": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "signal": { "type": "string" },
+              "programs_affected": { "type": "array", "items": { "type": "string" } },
+              "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] }
+            }
+          }
+        },
+        "common_control_opportunities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "control_family": { "type": "string" },
+              "frameworks": { "type": "array", "items": { "type": "string" } },
+              "programs": { "type": "array", "items": { "type": "string" } },
+              "efficiency_note": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "portfolio_health": {
+      "type": "object",
+      "properties": {
+        "total_programs": { "type": "integer" },
+        "red": { "type": "integer" },
+        "yellow": { "type": "integer" },
+        "green": { "type": "integer" },
+        "unknown": { "type": "integer" },
+        "total_open_decisions": { "type": "integer" },
+        "total_blockers": { "type": "integer" },
+        "total_escalations": { "type": "integer" },
+        "stale_programs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Programs with run JSON older than 7 days"
+        }
+      }
+    },
+    "suggested_action": {
+      "type": "object",
+      "required": ["action", "program", "urgency"],
+      "properties": {
+        "action": { "type": "string" },
+        "program": { "type": "string" },
+        "urgency": { "type": "string", "enum": ["immediate", "this_week", "next_cycle"] },
+        "rationale": { "type": "string" },
+        "age_days": { "type": "integer" }
+      }
+    }
+  }
+}

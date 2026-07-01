@@ -1,0 +1,190 @@
+# Canonical YAML Frontmatter Schema for Compliance Specs
+# All spec files in engine/ and functions/ must conform to this schema.
+# Agent definitions in agents/ use a separate schema (see agent_fields below).
+# Validated by scripts/validate_frontmatter.py
+
+spec_fields:
+  required:
+    resource_type:
+      type: string
+      allowed: [spec]
+      description: Must be "spec" for all spec files.
+
+    version:
+      type: string
+      pattern: '^\d+\.\d+$'
+      description: Semantic version as quoted string.
+
+    domain:
+      type: string
+      allowed:
+        - program-management
+        - session-management
+        - agent-initialization
+        - portfolio-management
+        - agent-infrastructure
+        - quality-assurance
+        - compliance
+        - communications
+        - vendor-management
+        - risk-management
+        - intelligence
+      description: Functional domain this spec serves.
+
+    triggers:
+      type: list
+      items: string
+      description: Events that cause this spec to be invoked.
+
+    inputs:
+      type: list
+      items: string
+      description: Data this spec consumes.
+
+    outputs:
+      type: list
+      items: string
+      description: Data this spec produces.
+
+    governed_by:
+      type: string
+      allowed: [config/constitution.md]
+      description: >
+        Path to governing document. Must be config/constitution.md.
+        No leading slash. No bare filename.
+
+  optional:
+    standalone:
+      type: boolean
+      description: Whether this spec can be invoked directly outside the pipeline.
+
+    entry_point:
+      type: boolean
+      description: Whether this spec is a valid session or pipeline entry point.
+
+    invokes:
+      type: list
+      items: string
+      description: >
+        Specs this one calls during execution.
+        Use relative paths from repo root (engine/foo.md, functions/bar.md).
+
+    invoked_by:
+      type: [string, list]
+      description: >
+        Spec(s) that call this one. Use relative paths from repo root.
+
+    depends_on:
+      type: list
+      items: string
+      description: >
+        Runtime dependencies -- specs, data files, or scripts required.
+        Use relative paths from repo root.
+
+    depends_on_optional:
+      type: list
+      items: string
+      description: Optional dependencies that enhance output but are not required.
+
+    inputs_optional:
+      type: boolean
+      description: Whether inputs can be omitted (agent infers from context).
+
+    inputs_minimum:
+      type: string
+      description: Minimum input requirement as a descriptive token.
+
+    applies_to:
+      type: list
+      items: string
+      description: Output types this spec validates (quality-gate only).
+
+    execution_modes:
+      type: list
+      items: string
+      description: How this spec can be executed (llm_spec, python_script).
+
+    script:
+      type: string
+      description: Path to companion Python script if execution_modes includes python_script.
+
+    status:
+      type: string
+      allowed: [stable, experimental, deprecated]
+      description: Maturity status. Omission implies stable.
+
+    agent_role:
+      type: string
+      allowed:
+        - program
+        - framework
+        - evidence
+        - intelligence
+        - communications
+        - audit
+        - review
+        - coordination
+        - infrastructure
+      description: >
+        Which fleet role owns this spec. Added for fleet decomposition.
+        Not required until Phase 2a agent definitions are created.
+
+    state_reads:
+      type: list
+      items: string
+      description: >
+        State paths this spec reads during execution.
+        Glob patterns allowed (runs/*/latest.json, memory/*-memory.md).
+
+    state_writes:
+      type: list
+      items: string
+      description: >
+        State paths this spec writes during execution.
+        Glob patterns allowed.
+
+    deployment_modes:
+      type: list
+      items: string
+      allowed_items: [ide, deployed, both]
+      description: >
+        Deployment targets this spec supports.
+        Defaults to both if omitted.
+
+agent_fields:
+  required:
+    name:
+      type: string
+      description: Agent identifier used for routing and logging.
+
+    description:
+      type: string
+      description: When to invoke this agent. May be multiline.
+
+    model:
+      type: string
+      description: Model selection. Use "inherit" to use the parent session model.
+
+  optional:
+    triggers:
+      type: list
+      items: string
+
+    governed_by:
+      type: string
+      allowed: [config/constitution.md]
+
+    agent_role:
+      type: string
+
+path_conventions:
+  description: >
+    All path references in frontmatter must use relative paths from the
+    compliance repo root. No leading slashes. No bare filenames without
+    directory prefix. Examples:
+      Good: config/constitution.md
+      Good: engine/quality-gate-spec.md
+      Good: functions/program-intake-spec.md
+      Bad: /constitution.md
+      Bad: quality-gate-spec.md
+      Bad: /config/constitution.md

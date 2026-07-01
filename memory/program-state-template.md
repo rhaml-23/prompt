@@ -18,14 +18,14 @@
 
 **Primary risk:** [the thing most likely to cause problems right now]
 **Active blockers:** [list or "none"]
-**Pending decisions:** [list items awaiting principal direction or "none"]
+**Pending decisions:** [list items awaiting lead program manager direction or "none"]
 **Relationship notes:** [anything worth knowing about key stakeholders or vendors]
 
 ---
 
 ## Deferred Items
 
-<!-- Items explicitly deferred by principal. Remove when addressed. -->
+<!-- Items explicitly deferred by lead program manager. Remove when addressed. -->
 <!-- If an item appears 3+ times, surface it at next session open. -->
 
 | Item | First deferred | Times deferred | Stated reason |
@@ -38,7 +38,7 @@
 <!-- Recurring flags surfaced by the agent. Remove when resolved. -->
 <!-- Pattern persisting 3+ sessions without resolution escalates to primary risk. -->
 
-| Pattern | First noted | Sessions unresolved | Principal direction |
+| Pattern | First noted | Sessions unresolved | Lead program manager direction |
 |---|---|---|---|
 
 ---
@@ -54,7 +54,7 @@
 **Decisions:** [any — also written to decisions log]
 **Deferred:** [anything pushed out — update Deferred Items table]
 **Pattern surfaced:** [any drift or avoidance noted]
-**Principal direction:** [response to pattern or "none raised"]
+**Lead program manager direction:** [response to pattern or "none raised"]
 **State at close:** [one sentence]
 **Next priority:** [agent recommendation]
 

@@ -135,7 +135,7 @@ Before renaming source:
 - Count decisions in source Decision Log + session entries
 - Count decisions in new decisions log
 - If counts match: proceed
-- If counts do not match: report discrepancy, do not rename source, require principal review
+- If counts do not match: report discrepancy, do not rename source, require lead program manager review
 
 ```
 [MIGRATE] Verification:
@@ -207,4 +207,4 @@ Run dry first. Review the report. If clean, run with `DRY_RUN: no`.
 - Reads: `memory/[PROGRAM]-memory.md`
 - Writes: `memory/[PROGRAM]-state.md`, `memory/[PROGRAM]-decisions.log`, `memory/[PROGRAM]-archive.md`
 - Renames: `memory/[PROGRAM]-memory.md` → `memory/[PROGRAM]-memory.md.pre-migration`
-- Invokes after: `functions/memory-housekeeping-spec.md` for ongoing maintenance
+- Invokes after: `memory/memory-housekeeping-spec.md` for ongoing maintenance

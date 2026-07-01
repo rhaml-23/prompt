@@ -94,7 +94,7 @@ Risk items use stable IDs that downstream commands (`/update-item`) can target u
 | Medium | Plan or Accept | Depends on program context and deadline proximity |
 | Low | Accept | With passive monitoring |
 
-**Accept** requires explicit principal sign-off. Flag as `[ACCEPTANCE REQUIRED]` — never silently accept.
+**Accept** requires explicit lead program manager sign-off. Flag as `[ACCEPTANCE REQUIRED]` — never silently accept.
 
 ---
 
@@ -139,7 +139,7 @@ For each item assign:
 
 Assign each item to Remediate / Plan / Accept per the table above.
 
-For Accept items: set `status: accepted` in the run JSON item. Add to `flags.one_way_door` in run JSON — acceptance is a principal decision, not a default.
+For Accept items: set `status: accepted` in the run JSON item. Add to `flags.one_way_door` in run JSON — acceptance is a lead program manager decision, not a default.
 
 ---
 
@@ -218,7 +218,7 @@ Top 3 by score and program impact:
 2. [RISK-ID]: [description]
 3. [RISK-ID]: [description]
 
-Acceptance required (principal sign-off — cannot be silently accepted):
+Acceptance required (lead program manager sign-off — cannot be silently accepted):
   [list Accept-category items]
 
 Estimated effort to reach audit-ready posture:
@@ -229,7 +229,7 @@ Estimated effort to reach audit-ready posture:
 ```
 [RISK] Register complete: [n] items
 [RISK] POA&M starter: [n] items requiring formal tracking
-[RISK] [n] items flagged [ACCEPTANCE REQUIRED] — principal sign-off needed
+[RISK] [n] items flagged [ACCEPTANCE REQUIRED] — lead program manager sign-off needed
 [RISK] Run JSON risk_register block written
 ```
 
@@ -259,7 +259,7 @@ python scripts/provenance_log.py write \
 | Owner unknown | `[OWNER NEEDED]` — add to `flags.owner_needed` in run JSON |
 | Target date unknown | `[DATE NEEDED]` — add to `flags.date_needed` in run JSON |
 | Risk severity ambiguous | Rate conservatively, flag `[ESTIMATED]` |
-| Acceptance warranted but no principal direction | Default to Plan — flag `[ACCEPTANCE REQUIRED]` |
+| Acceptance warranted but no lead program manager direction | Default to Plan — flag `[ACCEPTANCE REQUIRED]` |
 
 ---
 

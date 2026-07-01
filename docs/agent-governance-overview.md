@@ -1,7 +1,7 @@
 # Agentic Compliance System — Governance Overview
 **Document type:** Human-AI Collaboration Governance Statement
 **Intended audience:** Auditors, compliance reviewers, program oversight stakeholders
-**Prepared by:** Alex Langston, Principal Compliance Program Manager
+**Prepared by:** Alex Langston, Lead program manager Compliance Program Manager
 **Version:** 1.0
 
 ---
@@ -26,7 +26,7 @@ The system does not make decisions. It organizes information, drafts materials, 
 
 ## The Five Operational Concepts
 
-### 1. Boundary Sensing
+### Boundary Sensing
 
 **What it means:** Knowing where the system's capability ends and human judgment begins — and updating that boundary as the underlying model changes.
 
@@ -38,7 +38,7 @@ The boundary is also version-controlled. When the underlying LLM model is update
 
 ---
 
-### 2. Seam Design
+### Seam Design
 
 **What it means:** Structuring the work so that handoffs between the agent and the human are clean, explicit, and auditable — not ambiguous transitions where it's unclear who is responsible for what.
 
@@ -59,37 +59,39 @@ Nothing crosses the seam from agent to external without the program manager's ex
 
 ---
 
-### 3. Failure Model Maintenance
+### Failure Model Maintenance
 
 **What it means:** Understanding how the system fails — not catastrophically, but subtly — and building detection mechanisms that surface failure before it causes harm.
 
 **How it is implemented here:** The system has three categories of failure, each with a detection mechanism.
 
-**Structural regression** — a future LLM or human editor removes a required section from a governing document, silently degrading the system's behavior. Detected by: `integrity_check.py`, a script that maintains a manifest of required headings in protected files and flags any that are missing. Runs before any edit to a protected file. If a heading is missing, the agent is instructed to restore it and notify the program manager before proceeding.
+**Structural regression:** A future LLM or human editor removes a required section from a governing document, silently degrading the system's behavior. Detected by `integrity_check.py`, a script that maintains a manifest of required headings in protected files and flags any that are missing. Runs before any edit to a protected file. If a heading is missing, the agent is instructed to restore it and notify the program manager before proceeding.
 
-**Output quality failure** — the agent produces an output that violates formatting standards, omits required sections, or fails constitutional alignment. Detected by: the quality gate spec, which validates every output before delivery. Outputs that fail are regenerated with a correction brief. If they fail a second time, the agent escalates to the program manager rather than delivering a substandard output.
+**Output quality failure:** The agent produces an output that violates formatting standards, omits required sections, or fails constitutional alignment. Detected by the quality gate spec, which validates every output before delivery. Outputs that fail are regenerated with a correction brief. If they fail a second time, the agent escalates to the program manager rather than delivering a substandard output.
 
-**Relevance drift** — the agent makes a connection between an external finding and a program that is plausible but not defensible. Detected by: a structured relevance scoring system that requires framework or technology stack match before a finding is classified as relevant. Confidence levels and source quality are labeled on every finding so the program manager can assess the basis for any flagged item.
+Gate 6 of the quality gate also scans every output for documented AI writing patterns (vocabulary clusters, vague attribution, promotional language, knowledge-gap speculation) that undermine evidentiary neutrality in compliance artifacts. Any Tier 1 pattern triggers regeneration before delivery.
 
-**Hallucination** — the agent fabricates a citation, a control requirement, or a person's name. Mitigated by: a constitutional mandate that all inferences are labeled `[INFERRED]`, all missing data is labeled `[INSUFFICIENT DATA]`, and citations that cannot be confidently named are classified as "training knowledge" rather than attributed to a specific source. The program manager is expected to verify any `[INFERRED]` item before acting on it.
+**Relevance drift:** The agent makes a connection between an external finding and a program that is plausible but not defensible. Detected by a structured relevance scoring system that requires framework or technology stack match before a finding is classified as relevant. Confidence levels and source quality are labeled on every finding so the program manager can assess the basis for any flagged item.
+
+**Hallucination:** The agent fabricates a citation, a control requirement, or a person's name. Mitigated by a constitutional mandate that all inferences are labeled `[INFERRED]`, all missing data is labeled `[DATA NEEDED: source]`, and citations that cannot be confidently named are classified as "training knowledge" rather than attributed to a specific source. The program manager is expected to verify any `[INFERRED]` item before acting on it.
 
 The system does not claim to eliminate these failure modes. It claims to surface them visibly so a human can catch and correct them.
 
 ---
 
-### 4. Capability Forecasting
+### Capability Forecasting
 
 **What it means:** Anticipating how the system's useful boundary will shift as the underlying model improves — and designing the system to expand gracefully rather than break.
 
 **How it is implemented here:** The specs are written in portable, plain-language markdown. They do not depend on any specific LLM vendor, model version, or API. The same spec runs on Claude, GPT, Gemini, or a locally-hosted open model. This means the system's capability grows as models improve, without requiring the system to be redesigned.
 
-The constitution's Article VIII defines an amendment process for when the system's boundaries need to be updated — either because the model has become more capable and the principal wants to extend autonomous authority, or because a failure has been identified and a new constraint is needed.
+The constitution's Article VIII defines an amendment process for when the system's boundaries need to be updated — either because the model has become more capable and the lead program manager wants to extend autonomous authority, or because a failure has been identified and a new constraint is needed.
 
 The system is designed to be extended, not replaced. New work patterns are added as new specs in the `functions/` directory. New behavioral instructions are added as mandates in the constitution. The architecture anticipates growth.
 
 ---
 
-### 5. Leverage Calibration
+### Leverage Calibration
 
 **What it means:** Knowing where applying the agent produces disproportionate value — and where human judgment is so essential that agent involvement adds risk rather than capacity.
 

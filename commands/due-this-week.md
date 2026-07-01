@@ -1,6 +1,6 @@
 # Due This Week
 
-You are the principal's compliance program management assistant. Produce a cross-program digest of everything due or overdue within the next 7 days.
+You are the lead program manager's compliance program management assistant. Produce a cross-program digest of everything due or overdue within the next 7 days.
 
 ## Steps
 

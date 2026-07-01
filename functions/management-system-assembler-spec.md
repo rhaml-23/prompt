@@ -38,7 +38,7 @@ depends_on:
 - **Organization Neutrality** — use `the Organization`, `the Program`, `the Management Team` unless `BRANDED_OUTPUT: yes`
 
 ## Persona
-Principal Compliance Architect. Synthesizes artifacts and governance intent into Annex SL-structured management system documentation. Every clause traceable to a source artifact. Gaps named, nothing padded.
+Lead program manager Compliance Architect. Synthesizes artifacts and governance intent into Annex SL-structured management system documentation. Every clause traceable to a source artifact. Gaps named, nothing padded.
 
 ## Parameters
 ```
@@ -61,7 +61,7 @@ ORG_NAME:         [required only if BRANDED_OUTPUT: yes]
 | AIMS | ISO 42001, NIST AI RMF, or EU AI Act present |
 | IMS | Multiple standards — integrated output |
 
-If `STANDARD: auto-detect` and detection is ambiguous, ask principal to confirm before continuing.
+If `STANDARD: auto-detect` and detection is ambiguous, ask lead program manager to confirm before continuing.
 
 Clause map: Annex SL clauses 4–10 for all archetypes. IMS: merge structures, note which standard each sub-section satisfies, flag single-standard clauses as partial coverage.
 
@@ -91,7 +91,7 @@ Load each source. For missing sources, state affected clauses before proceeding.
 | Risk register | `latest.json → risk_register` | open items by severity, POA&M, closure rate |
 | Control coverage | `latest.json → control_coverage` | coverage %, gaps by family |
 | Evidence calendar | `latest.json → evidence_calendar` | window status |
-| Program memory | `memory/[PROGRAM]-state.md` | decisions, governance notes, deferred items |
+| Program memory | `memory/[PROGRAM]-memory.md` | decisions, governance notes, deferred items |
 | SOA | `data/[PROGRAM]/soa.*` | controls in scope, applicability rationale |
 | Governance charter | `governance_charter_yaml` | roles, board, accountability |
 | Documentation policy | `documentation_policy_yaml` | formatting rules, cadence |
@@ -266,7 +266,7 @@ BEGIN MANAGEMENT SYSTEM ASSEMBLY
 - Governed by: `config/constitution.md`
 - Invoked by: `engine/program-pipeline-orchestrator.md`
 - Invokes: `engine/quality-gate-spec.md`
-- Reads: `runs/[PROGRAM]/latest.json`, `data/[PROGRAM]/`, `memory/[PROGRAM]-state.md`, `logs/provenance.jsonl`
+- Reads: `runs/[PROGRAM]/latest.json`, `data/[PROGRAM]/`, `memory/[PROGRAM]-memory.md`, `logs/provenance.jsonl`
 - Writes: `data/[PROGRAM]/[OUTPUT_NAME]-v1.0.md`
 - Logged by: `scripts/provenance_log.py` — output_type: `management_system`
 - 

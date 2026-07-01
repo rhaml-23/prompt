@@ -1,33 +1,55 @@
-# Program Management Pipeline Tool
+# Program Management Pipeline
 
 A portable, LLM-powered professional operating system for compliance and security program managers. Encodes expertise into reusable specs, automates routine oversight work, enforces output quality and constitutional alignment, and produces structured outputs you can act on or route to downstream tooling.
 
-**Designed for:** Security and compliance program managers who want to operate at a principal level — reviewing and deciding, not executing.
+**Designed for:** Security and compliance program managers who want to operate at a strategic oversight level — reviewing and deciding, not executing.
 
 **Runs on:** Any capable LLM (Claude, Gemini, GPT, local Ollama models) + Python 3.9+
+
+**Optional — Archivist:** If you use Archivist or similar tooling, all engine and function specs carry YAML frontmatter (`resource_type: spec`) for discovery and tagging. Not required to run this repo in Cursor.
+
+---
+
+## Supported Environments
+
+The core specs (`config/`, `engine/`, `commands/`, `agents/`, `functions/`) are tool-agnostic — they work in any LLM interface. Two thin adapter layers wire them into specific tools without changing the source of truth:
+
+| Layer | Cursor | Claude Code |
+|---|---|---|
+| Always-loaded context | `.cursor/rules/*.mdc` | `CLAUDE.md` (repo root) |
+| Slash commands | `.cursor/skills/*/SKILL.md` | `.claude/commands/*.md` |
+| Canonical specs | `commands/*.md` ← single source of truth for both | |
+
+**Cursor:** Open the repo in Cursor. The `.cursor/rules/` files load automatically. Use `/[command]` in the Agent composer to invoke any skill.
+
+**Claude Code:** Run `claude` from the repo root. `CLAUDE.md` loads automatically at session start. Use `/[command]` in the Claude Code prompt to invoke any slash command.
+
+Both adapters point to the same `commands/*.md` specs. Adding a new command requires one entry in `commands/`, one SKILL.md in `.cursor/skills/`, and one wrapper in `.claude/commands/`.
 
 ---
 
 ## Table of Contents
 
-1. [System Architecture](#system-architecture)
-2. [Repo Structure](#repo-structure)
-3. [Directory Guide](#directory-guide)
-4. [Load Order](#load-order)
-5. [First-Time Setup](#first-time-setup)
-6. [Using This Repo in Cursor](#using-this-repo-in-cursor)
-7. [Full Build — New Program](#full-build--new-program)
-8. [Running the Pipeline](#running-the-pipeline)
-9. [Weekly Session Workflow](#weekly-session-workflow)
-10. [Daily Workflow](#daily-workflow)
-11. [Updating State with New Materials](#updating-state-with-new-materials)
-12. [Function Reference](#function-reference)
-13. [Script Reference](#script-reference)
-14. [Provenance Log](#provenance-log)
-15. [Episodic Memory](#episodic-memory)
-16. [Obsidian Integration](#obsidian-integration)
-17. [Troubleshooting](#troubleshooting)
-18. [Design Principles](#design-principles)
+1. [Supported Environments](#supported-environments)
+2. [System Architecture](#system-architecture)
+3. [Repo Structure](#repo-structure)
+4. [Directory Guide](#directory-guide)
+5. [Load Order](#load-order)
+6. [First-Time Setup](#first-time-setup)
+7. [Using This Repo in Cursor](#using-this-repo-in-cursor)
+8. [Using This Repo in Claude Code](#using-this-repo-in-claude-code)
+9. [Full Build — New Program](#full-build--new-program)
+10. [Running the Pipeline](#running-the-pipeline)
+11. [Weekly Session Workflow](#weekly-session-workflow)
+12. [Daily Workflow](#daily-workflow)
+13. [Updating State with New Materials](#updating-state-with-new-materials)
+14. [Function Reference](#function-reference)
+15. [Script Reference](#script-reference)
+16. [Provenance Log](#provenance-log)
+17. [Episodic Memory](#episodic-memory)
+18. [Obsidian Integration](#obsidian-integration)
+19. [Troubleshooting](#troubleshooting)
+20. [Design Principles](#design-principles)
 
 ---
 
@@ -48,17 +70,18 @@ The system is organized as an application with six layers:
 **Data/State** — Program materials drop zone, versioned run JSON, episodic memory, provenance log, and generated outputs. Git tracks everything.
 
 ```
-Principal
+Lead program manager
     │
     ▼
-.cursorrules → engine/session-init-spec.md     ← Cursor entry point
+.cursor/rules/ → engine/session-init-spec.md   ← Cursor entry point
+CLAUDE.md     → engine/session-init-spec.md   ← Claude Code entry point
     │           engine/weekly-session-spec.md  ← Weekly focused sessions
     │
     ▼
 config/constitution.md                          ← Governing authority (load first)
     │
     ▼
-memory/[program]-memory.md                      ← Episodic context (read at open, write at close)
+memory/[program]-memory.md                      ← Hot layer (read at open, update at close)
     │
     ▼
 engine/program-pipeline-orchestrator.md         ← Pipeline routing
@@ -77,16 +100,24 @@ runs/[PROGRAM]/latest.json                      ← Persistent program state
     │
     ├── scripts/briefing_renderer.py            ← → morning briefing markdown
     ├── scripts/draft_formatter.py              ← → draft communications
-    ├── scripts/calendar_exporter.py            ← → .ics + event list
     └── scripts/dashboard.py                    ← → ui/dashboard.html
 
 Portfolio layer (sits above programs):
     engine/portfolio-orchestrator.md       ← cross-program triage and briefing
         └── scripts/portfolio_renderer.py  ← → ui/portfolio.html
 
+Post-run review:
+    agents/run-reviewer.md                      ← Compliance run review and spec improvement
+
 Standalone functions (invoked directly):
     functions/compliance-entropy-spec.md        ← Longitudinal compliance analysis
     functions/compliance-redteam-spec.md        ← Adversarial artifact review
+    functions/external-intel-spec.md            ← External source monitoring and risk deltas
+    functions/control-assessment-spec.md        ← Auditor template filling
+    functions/management-system-assembler-spec.md ← ISMS/AIMS document assembly
+    functions/compliance-doc-generator-spec.md  ← Orchestrated compliance output generation
+    functions/product-evidence-spec.md          ← Product repo scan → control matrix, evidence gaps
+    functions/post-audit-spec.md                ← Post-audit lessons learned, corrective actions, feed-forward
     functions/calendar-output-spec.md           ← LLM fallback calendar generation
 ```
 
@@ -102,11 +133,22 @@ Standalone functions (invoked directly):
 │
 ├── config/
 │   ├── constitution.md                         ← LOAD FIRST — behavioral and ethical governance
-│   └── tool-requirements.md                    ← build standards for all scripts and tools
+│   ├── tool-requirements.md                    ← build standards for all scripts and tools
+│   ├── spec-frontmatter-schema.yaml            ← canonical YAML frontmatter schema
+│   └── schemas/                                ← versioned JSON Schemas for fleet data types
+│       ├── portfolio-state.schema.json         ← cross-program portfolio state
+│       ├── run-output.schema.json              ← pipeline run output envelope
+│       ├── agent-message.schema.json           ← inter-agent message envelope (37 types)
+│       ├── audit-entry.schema.json             ← append-only audit log entry
+│       ├── common-control-catalog.schema.json  ← cross-framework control mappings
+│       ├── evidence-record.schema.json         ← evidence lifecycle tracking
+│       ├── trust-state.schema.json             ← agent trust levels and history
+│       └── fleet-metrics.schema.json           ← fleet operational metrics
 │
 ├── engine/
 │   ├── program-pipeline-orchestrator.md        ← pipeline entry point and routing
 │   ├── session-init-spec.md                    ← Cursor agent initialization
+│   ├── crash-resilience-spec.md                ← checkpoints, draft-run.json, resume after interrupt
 │   ├── weekly-session-spec.md                  ← weekly focused work session
 │   ├── quality-gate-spec.md                    ← output validation — runs before every delivery
 │   ├── spec-creation-spec.md                   ← how to extend the system with new specs
@@ -121,22 +163,61 @@ Standalone functions (invoked directly):
 │   ├── risk-register-spec.md                   ← risk register and POA&M starter
 │   ├── calendar-output-spec.md                 ← calendar generation (LLM mode)
 │   ├── compliance-entropy-spec.md              ← longitudinal compliance analysis
-│   └── compliance-redteam-spec.md              ← adversarial artifact review
+│   ├── compliance-redteam-spec.md              ← adversarial artifact review
+│   ├── auditor-view-spec.md                    ← read-only auditor compliance posture dashboard
+│   ├── external-intel-spec.md                  ← external source monitoring and risk deltas
+│   ├── control-assessment-spec.md              ← auditor template filling from framework + product docs
+│   ├── management-system-assembler-spec.md     ← ISMS/AIMS document assembly from artifacts
+│   ├── compliance-doc-generator-spec.md        ← orchestrated CSV/MD compliance output generation
+│   ├── product-evidence-spec.md               ← product repo scan → ISO 42001 control matrix and evidence gaps
+│   └── post-audit-spec.md                     ← post-audit lessons learned, corrective actions, feed-forward
+│
+├── agents/
+│   ├── program-agent.md                        ← per-program lifecycle management agent
+│   ├── review-agent.md                         ← quality assurance and adversarial review agent
+│   ├── intelligence-agent.md                   ← external signal monitoring agent
+│   ├── evidence-agent.md                       ← continuous evidence monitoring and validation
+│   ├── coordinator.md                          ← portfolio coordination and dynamic routing
+│   └── run-reviewer.md                         ← post-run compliance review and spec improvement
+│
+├── commands/
+│   ├── COMMANDS.md                             ← slash command reference
+│   ├── daily-brief.md                          ← /daily-brief
+│   ├── program-status.md                       ← /program-status
+│   ├── due-this-week.md                        ← /due-this-week
+│   ├── meeting-prep.md                         ← /meeting-prep
+│   ├── draft-status-update.md                  ← /draft-status-update
+│   ├── evidence-due.md                         ← /evidence-due
+│   ├── log-decision.md                         ← /log-decision
+│   ├── update-item.md                          ← /update-item
+│   ├── intel-scan.md                           ← /intel-scan
+│   ├── auditor-view.md                         ← /auditor-view
+│   ├── provenance-query.md                     ← /provenance-query
+│   ├── meeting-debrief.md                      ← /meeting-debrief
+│   └── control-assessment.md                   ← /control-assessment
 │
 ├── skills/
-│   └── (empty — populated when skills become task-specific enough for selective loading)
+│   ├── research.md                             ← research and synthesis skill
+│   └── gemara.md                               ← Gemara YAML generation and QC
 │
 ├── scripts/
+│   ├── auditor_view_renderer.py                ← per-program auditor dashboard → ui/[program]-auditor-[date].html
 │   ├── briefing_renderer.py                    ← run JSON → morning briefing
-│   ├── draft_formatter.py                      ← run JSON → draft communications
-│   ├── calendar_exporter.py                    ← run JSON → .ics + markdown events
+│   ├── calendar_exporter.py                    ← run JSON → .ics calendar and markdown event list
 │   ├── dashboard.py                            ← all programs → HTML dashboard
-│   ├── provenance_log.py                       ← deliverable provenance log
+│   ├── draft_formatter.py                      ← run JSON → draft communications
 │   ├── integrity_check.py                      ← protected file heading validation
-│   └── portfolio_renderer.py                   ← portfolio JSON → ui/portfolio.html
+│   ├── portfolio_renderer.py                   ← portfolio JSON → ui/portfolio.html
+│   ├── provenance_log.py                       ← deliverable provenance log
+│   ├── spec_coverage.py                        ← routing table and orchestrator cross-reference validation
+│   ├── validate_frontmatter.py                 ← YAML frontmatter validation against schema
+│   ├── predictive_health.py                    ← predictive program health and certification timeline
+│   └── fleet_dashboard.py                      ← fleet observability HTML dashboard
 │
 ├── memory/
-│   ├── session-memory-template.md              ← copy this to create a program memory file
+│   ├── session-memory-template.md              ← copy and rename to [program]-memory.md
+│   ├── memory-housekeeping-spec.md             ← quarterly maintenance — compress, validate, refresh
+│   ├── memory-migration-spec.md                ← migration helper (if needed)
 │   └── [program_slug]-memory.md                ← one per active program
 │
 ├── runs/
@@ -152,7 +233,8 @@ Standalone functions (invoked directly):
 │
 ├── ui/
 │   ├── dashboard.html                          ← generated by scripts/dashboard.py
-│   └── portfolio.html                          ← generated by scripts/portfolio_renderer.py
+│   ├── portfolio.html                          ← generated by scripts/portfolio_renderer.py
+│   └── [program]-auditor-[date].html          ← generated by scripts/auditor_view_renderer.py
 │
 ├── logs/
 │   └── provenance.jsonl                        ← append-only deliverable history
@@ -162,9 +244,32 @@ Standalone functions (invoked directly):
 │       ├── 00_index.md
 │       └── 01_[type]_[recipient].md
 │
+├── runtime/
+│   ├── __init__.py                             ← runtime abstraction layer package
+│   ├── interfaces.py                           ← abstract interfaces (StateBackend, MessageBus, MemoryStore, AuditLog)
+│   ├── ide.py                                  ← file-based IDE-mode implementations
+│   ├── deployed.py                             ← PostgreSQL/NATS deployed-mode implementations
+│   ├── factory.py                              ← runtime factory — selects implementations by mode
+│   ├── router.py                               ← dynamic work router with priority queue
+│   ├── crosswalk.py                            ← cross-framework Common Control Catalog engine
+│   ├── trust.py                                ← graduated autonomy trust level management
+│   ├── metrics.py                              ← fleet observability metrics collection
+│   ├── entrypoint.py                           ← container entrypoint for IDE and deployed modes
+│   ├── Containerfile                           ← parameterized multi-agent container
+│   ├── requirements.txt                        ← runtime dependencies
+│   └── deploy/                                 ← OpenShift/Kubernetes deployment manifests
+│
+├── tests/
+│   ├── test_spec_validation.py                 ← frontmatter, cross-reference, and schema tests
+│   ├── test_runtime.py                         ← runtime abstraction implementation tests
+│   └── test_phase3.py                          ← Phase 3: router, crosswalk, trust, metrics, predictions
+│
 └── docs/
     ├── obsidian-vault-guide.md                 ← Obsidian vault setup and workflow
-    └── agent-evaluation-test-suite.md          ← standardized agent performance tests
+    ├── agent-evaluation-test-suite.md          ← standardized agent performance tests
+    ├── agent-governance-overview.md            ← auditor-facing governance narrative
+    ├── next-phase-context.md                   ← coordinator/fleet architecture planning
+    └── compliance-agent-guide.docx             ← human-facing compliance agent guide
 ```
 
 **Rule:** Never edit `latest.json` directly — always overwritten by the pipeline.
@@ -181,13 +286,17 @@ Understanding what lives where makes maintenance obvious.
 
 **`engine/`** — The runtime layer. These files run on every session regardless of what you're doing. The orchestrator routes work. Session init and weekly session manage your interaction with the agent. The quality gate validates output. The spec creation spec is how you extend the engine itself. Changes here affect every session.
 
-**`functions/`** — Discrete work specs. Each encodes one domain: intake, monitoring, comms, vendor, coverage, risk, calendar, entropy, red team. The engine calls them when work matches their domain. Adding a new work pattern means adding a file here and wiring it into the orchestrator. Changes here affect only the relevant work pattern.
+**`functions/`** — Discrete work specs. Each encodes one domain: intake, monitoring, comms, vendor, coverage, risk, calendar, entropy, red team, external intel, auditor view, control assessment, management system assembly, compliance doc generation, product evidence extraction. The engine calls them when work matches their domain. Adding a new work pattern means adding a file here and wiring it into the orchestrator and session-init routing table. Changes here affect only the relevant work pattern.
 
-**`skills/`** — Currently empty. Agent behavioral skills live in `config/constitution.md` Article IV while they are session-wide and few. When skills become numerous or task-specific enough to warrant selective loading, they graduate to files here. The constitution will reference a skills index when that threshold is reached.
+**`agents/`** — Agent definitions for the compliance fleet. Each agent wraps one or more specs and defines its authority boundary, communication interface, state access, and deployment modes. Contains `program-agent.md` (per-program lifecycle management), `review-agent.md` (quality assurance and adversarial review), `intelligence-agent.md` (external signal monitoring), `evidence-agent.md` (continuous evidence monitoring and validation), `coordinator.md` (portfolio coordination and dynamic routing), `run-reviewer.md` (post-run compliance review with spec improvement staging), and framework specialists: `framework-nist-fedramp.md`, `framework-iso27001.md`, `framework-soc2.md`, `framework-iso42001.md` (AI management system).
+
+**`commands/`** — Slash command specs — the tool-agnostic source of truth. Each file defines one `/command-name`. `COMMANDS.md` is the reference index. Commands route to specs or scripts — they do not contain compliance logic themselves. Cursor loads them via `.cursor/skills/*/SKILL.md`; Claude Code loads them via `.claude/commands/*.md`.
+
+**`skills/`** — Task-specific behavioral instructions loaded selectively. Currently contains `research.md` (research and synthesis skill) and `gemara.md` (Gemara YAML generation and QC). Session-wide behavioral skills remain in `config/constitution.md` Article IV. Skills graduate to files here when they become task-specific enough to warrant selective loading.
 
 **`scripts/`** — Python tools that consume run JSON and produce artifacts. Stateless — they read from `runs/` and write to `ui/` or `drafts/`. Adding a new output format means adding a file here. Changes here never affect specs or agent behavior.
 
-**`memory/`** — Episodic logs. One file per active program. Written at session close, read at session open. The agent's long-term context. Never overwritten — always appended.
+**`memory/`** — Long-term context using one active memory file per program. `[program]-memory.md` is the hot layer loaded every session and appended at session close.
 
 **`runs/`** — Pipeline state. One directory per program. `latest.json` is the current state. Dated files are the version history. Scripts read from here. Nothing else writes here except the pipeline.
 
@@ -209,7 +318,7 @@ When initializing any session or pipeline run, load in this order:
 
 ```
 1. config/constitution.md                  ← values, decision hierarchy, authority boundaries
-2. memory/[program]-memory.md              ← episodic context
+2. memory/[program]-memory.md              ← hot layer — current phase, health, blockers, recent sessions
 3. engine/session-init-spec.md             ← agent behavior and routing (Cursor / ad-hoc)
    OR
    engine/weekly-session-spec.md           ← for focused weekly sessions
@@ -219,7 +328,7 @@ When initializing any session or pipeline run, load in this order:
 5. engine/quality-gate-spec.md             ← applied automatically before any output delivery
 ```
 
-`.cursorrules` handles steps 1–3 automatically in Cursor.
+`.cursor/rules/` handles steps 1–3 automatically in Cursor. `CLAUDE.md` handles steps 1–3 automatically in Claude Code.
 
 ---
 
@@ -256,21 +365,21 @@ docs/*.md                            → /docs/
 ### 3. Install script dependencies
 
 ```bash
-pip install rich icalendar
+pip install rich
 ```
 
-### 4. Point Archivist at this repo
+### 4. (Optional) Index specs with Archivist or similar
 
-Archivist indexes all specs via YAML frontmatter `resource_type: spec` across both `engine/` and `functions/`.
+If you use external spec indexing, point it at this repo. Specs use YAML frontmatter with `resource_type: spec` across `engine/` and `functions/`.
 
-### 5. Create your first program directory and memory file
+### 5. Create your first program directory and memory files
 
 ```bash
 mkdir -p runs/[PROGRAM_SLUG] data/[PROGRAM_SLUG]/materials
 cp memory/session-memory-template.md memory/[PROGRAM_SLUG]-memory.md
 ```
 
-Edit the memory file Standing Context section with basic program information.
+Edit the state file Standing Context section with basic program information.
 
 ---
 
@@ -285,10 +394,10 @@ Edit the memory file Standing Context section with basic program information.
 ### What happens at session start
 
 1. Loads `config/constitution.md`
-2. Reads all `memory/*.md` files for episodic context
-3. Scans `runs/*/latest.json` for current program state
-4. Tails `logs/provenance.jsonl` for recent activity
-5. Waits for input or produces a brief orientation
+2. Discovers available programs via `ls runs/ memory/`
+3. Classifies input and loads only what the request requires
+4. For program-scoped work: loads `memory/[program]-memory.md`, reads `runs/[program]/latest.json`
+5. If no input: produces a brief orientation from portfolio state, run recommendations, and recent provenance
 
 ### File resolution
 
@@ -304,6 +413,36 @@ Agent searches the entire repo recursively before asking about a missing file. N
 - "Full build" + materials → autonomous build sequence
 
 The agent states its classification before acting. You confirm before any one-way door action.
+
+---
+
+## Using This Repo in Claude Code
+
+### Setup
+
+1. Install Claude Code: `npm install -g @anthropic-ai/claude-code`
+2. Open a terminal at the repo root
+3. Run `claude` — `CLAUDE.md` loads automatically
+
+### What happens at session start
+
+Same as Cursor: constitution load → directory discovery → classify input → load on demand. `CLAUDE.md` carries the same boot sequence as `.cursor/rules/lazy-load.mdc`.
+
+### Invoking commands
+
+Type `/[command-name]` in the Claude Code prompt. The `.claude/commands/[name].md` wrapper loads and executes the canonical spec from `commands/[name].md`.
+
+```
+/init                    ← session initialization
+/daily-brief             ← morning portfolio briefing
+/program-status          ← single-program snapshot
+/due-this-week           ← deadline digest
+/kanban                  ← task board view
+```
+
+### Dropping work in
+
+Same patterns as Cursor — paste an email, meeting notes, or a stakeholder request directly. The agent classifies, routes, and produces output through the same quality gate.
 
 ---
 
@@ -475,6 +614,12 @@ Read order: Decision Queue → Summary View → Watch List → Escalations → C
 | Meeting recap needed | `functions/program-comms-spec.md` |
 | Weekly focused work | `engine/weekly-session-spec.md` |
 | New program with all materials | `new_program_full_build` |
+| Auditor review or audit prep | `functions/auditor-view-spec.md` |
+| External threat or regulatory change | `functions/external-intel-spec.md` |
+| Control assessment or template fill | `functions/control-assessment-spec.md` |
+| ISMS or management system build | `functions/management-system-assembler-spec.md` |
+| Audit closed / lessons learned | `functions/post-audit-spec.md` |
+| Meeting debrief | `/meeting-debrief` command |
 
 ---
 
@@ -493,6 +638,24 @@ Read order: Decision Queue → Summary View → Watch List → Escalations → C
 | `calendar-output-spec.md` | Calendar | ✓ | LLM fallback — prefer the script |
 | `compliance-entropy-spec.md` | Compliance | ✓ | Longitudinal analysis — needs 2+ cycles |
 | `compliance-redteam-spec.md` | Compliance | ✓ | Adversarial artifact review |
+| `auditor-view-spec.md` | Compliance | ✓ | Read-only auditor compliance posture dashboard |
+| `external-intel-spec.md` | Intelligence | ✓ | External source monitoring and risk deltas |
+| `control-assessment-spec.md` | Compliance | ✓ | Fill auditor templates from framework + product docs |
+| `management-system-assembler-spec.md` | Compliance | ✓ | ISMS/AIMS document assembly from artifacts |
+| `compliance-doc-generator-spec.md` | Compliance | ✓ | Orchestrated CSV/MD compliance output generation |
+| `product-evidence-spec.md` | Compliance | ✓ | Product repo scan → ISO 42001 control matrix and evidence gaps |
+| `post-audit-spec.md` | Program Management | ✓ | Post-audit debrief — lessons learned, corrective actions, feed-forward |
+
+### Agents (`/agents/`)
+
+| File | Role | Fleet Role |
+|---|---|---|
+| `program-agent.md` | Per-program lifecycle management — pipeline, memory, functions | Program |
+| `review-agent.md` | Quality assurance — run review, red team, entropy, quality gate | Review |
+| `intelligence-agent.md` | External signal monitoring — vulnerabilities, regulations, frameworks | Intelligence |
+| `evidence-agent.md` | Continuous evidence monitoring — staleness, gaps, validation | Evidence |
+| `coordinator.md` | Portfolio coordination — aggregation, dynamic routing, fleet health | Coordination |
+| `run-reviewer.md` | Post-run compliance review (D1-D6) and spec improvement staging | Review |
 
 ### Engine (`/engine/`)
 
@@ -536,13 +699,6 @@ python scripts/draft_formatter.py --run runs/[program]/latest.json --list
 python scripts/draft_formatter.py --run runs/[program]/latest.json
 ```
 
-### `calendar_exporter.py`
-```bash
-python scripts/calendar_exporter.py --run runs/[program]/latest.json
-python scripts/calendar_exporter.py --run runs/[program]/latest.json --output events.ics
-```
-Import `.ics`: Google Calendar → Other calendars → Import. Outlook → File → Import/Export.
-
 ### `provenance_log.py`
 ```bash
 python scripts/provenance_log.py write --spec "[spec]" --output "[path]" \
@@ -560,6 +716,14 @@ python scripts/portfolio_renderer.py --open
 python scripts/portfolio_renderer.py --output ui/portfolio.html
 python scripts/portfolio_renderer.py --portfolio data/portfolio/latest.json
 ```
+
+### `auditor_view_renderer.py`
+```bash
+python scripts/auditor_view_renderer.py --program [slug] --open
+python scripts/auditor_view_renderer.py --program [slug] --lookback 180
+python scripts/auditor_view_renderer.py --program [slug] --output ui/custom.html
+```
+Print to PDF for submission: browser → Print → Save as PDF. No additional tooling required.
 
 ### `integrity_check.py`
 ```bash
@@ -582,9 +746,11 @@ Location: `logs/provenance.jsonl` — append-only, git-tracked, queryable foreve
 
 ## Episodic Memory
 
-Memory files give the agent context across sessions. Without them every session starts cold. With them the agent notices patterns, tracks decisions, and surfaces avoidance without being asked.
+Memory gives the agent context across sessions. Without it every session starts cold. With it the agent notices patterns, tracks decisions, and surfaces avoidance without being asked.
 
-Each memory file: Standing Context, Decision Log, Deferred Items, Session Entries (append-only).
+Each program uses three files optimized for different access patterns:
+
+- **`[program]-memory.md`** — Hot layer. Loaded every session. Current phase, health, active blockers, pending decisions, relationship notes, deferred items, recurring patterns, and session entries.
 
 ```bash
 cp memory/session-memory-template.md memory/[PROGRAM_SLUG]-memory.md
@@ -592,7 +758,7 @@ cp memory/session-memory-template.md memory/[PROGRAM_SLUG]-memory.md
 
 Pattern detection scans for: deferred items pushed 3+ times, flags in 3+ consecutive runs, decision queue items stagnant 14+ days. Surfaces at session open as agenda items — observations, not accusations.
 
-After 20+ sessions: summarize older entries into a historical context paragraph, keep the most recent 10 in full. Never delete Decision Log or Deferred Items tables.
+Run `BEGIN MEMORY HOUSEKEEPING` quarterly to compress sessions older than 90 days into the archive, validate the decisions log integrity, and refresh the state file from current run JSON. See `memory/README.md` for details.
 
 ---
 
@@ -630,9 +796,6 @@ Keep most recent 10 entries in full. Summarize older entries. Never delete Decis
 **Agent not detecting patterns**
 Requires 3+ session entries. Expected on new files.
 
-**`calendar_exporter.py` fallback warning**
-`pip install icalendar`
-
 **Cursor not loading config**
 Verify `.cursorrules` is at repo root. Paste its contents into the composer if not triggering.
 
@@ -647,9 +810,9 @@ Verify `.cursorrules` is at repo root. Paste its contents into the composer if n
 - **Build completely or stub explicitly.** A complete stub is more valuable than a partial build. Gaps are marked, never silently omitted.
 - **Memory over cold starts.** Every session builds on the last. Episodic memory is a first-class artifact.
 - **Scripts are stateless renderers.** They read from `runs/`, write to `ui/` or `drafts/`, and know nothing about agent behavior.
-- **Quality gates before delivery.** No output reaches the principal without passing constitutional alignment, structural completeness, format, and tone checks.
+- **Quality gates before delivery.** No output reaches the lead program manager without passing constitutional alignment, structural completeness, format, and tone checks.
 - **Reuse over regeneration.** Check the provenance log before producing new work.
 - **Search before interrupting.** Missing files get found, not escalated.
 - **Patterns get named.** Drift, avoidance, and accumulating risk surface at session open.
-- **One-way doors require the principal.** No exceptions.
+- **One-way doors require the lead program manager.** No exceptions.
 - **Portability over optimization.** Everything works in the most constrained environment: a free LLM and a terminal with Python.

@@ -130,6 +130,5 @@ The migration spec reads your existing file completely, extracts all decisions a
 
 | Spec | What it does |
 |---|---|
-| `functions/memory-housekeeping-spec.md` | Quarterly maintenance — compress, validate, refresh |
-| `functions/memory-migration-spec.md` | One-time
-migration from single-file to three-file model |
+| `memory/memory-housekeeping-spec.md` | Quarterly maintenance — compress, validate, refresh |
+| `memory/memory-migration-spec.md` | One-time migration from single-file to three-file model |

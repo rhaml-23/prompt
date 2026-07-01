@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "run-output.schema.json",
+  "title": "Pipeline Run Output",
+  "description": "Unified JSON envelope produced by the program-pipeline-orchestrator. This is the primary program state artifact written to runs/[PROGRAM]/[date]-run.json.",
+  "type": "object",
+  "required": ["schema_version", "run_manifest", "program_state"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Schema version for this run output format"
+    },
+    "constitution_version": {
+      "type": "string"
+    },
+    "run_manifest": {
+      "type": "object",
+      "required": ["run_date", "program_name", "intent"],
+      "properties": {
+        "run_date": { "type": "string", "format": "date" },
+        "pm_name": { "type": "string" },
+        "program_name": { "type": "string" },
+        "intent": {
+          "type": "string",
+          "enum": ["new_program", "new_program_full_build", "monitoring_run", "vendor_review", "full_run", "unknown"]
+        },
+        "prior_run_date": { "type": ["string", "null"], "format": "date" },
+        "triage_responses": { "type": ["object", "null"] },
+        "routing_plan": {
+          "type": "object",
+          "properties": {
+            "intake": { "type": "string" },
+            "monitoring": { "type": "string" },
+            "vendor": { "type": "string" }
+          }
+        },
+        "constitutional_alignment": {
+          "type": "object",
+          "properties": {
+            "protection": { "type": "string" },
+            "flow": { "type": "string" },
+            "truth": { "type": "string" },
+            "escalations": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "run_notes": { "type": "string" }
+      }
+    },
+    "program_state": {
+      "type": "object",
+      "required": ["overall_health"],
+      "properties": {
+        "overall_health": {
+          "type": "string",
+          "enum": ["green", "yellow", "red", "unknown"]
+        },
+        "one_line_status": { "type": "string" },
+        "last_updated": { "type": "string", "format": "date" },
+        "phase": { "type": "string" },
+        "scope": { "type": "string" },
+        "framework": { "type": ["string", "array"] },
+        "program": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "assessment_date": { "type": "string", "format": "date" },
+        "output_type": { "type": "string" },
+        "output": { "type": ["object", "string", "null"] },
+        "totals": { "type": "object" },
+        "action_needed": { "type": "array", "items": { "$ref": "#/$defs/action_item" } },
+        "decision_queue": { "type": "array", "items": { "$ref": "#/$defs/action_item" } },
+        "control_coverage": { "$ref": "#/$defs/coverage_block" },
+        "risk_register": { "type": ["object", "null"] },
+        "quality_gate": { "type": ["object", "null"] },
+        "evidence_calendar": { "type": ["object", "null"] },
+        "overdue_poam": { "type": "array", "items": { "$ref": "#/$defs/action_item" } }
+      }
+    },
+    "intake_output": { "type": ["object", "null"] },
+    "monitoring_output": { "type": ["object", "null"] },
+    "vendor_output": { "type": ["object", "null"] },
+    "flags": {
+      "type": "object",
+      "properties": {
+        "owner_needed": { "type": "array", "items": { "type": "string" } },
+        "date_needed": { "type": "array", "items": { "type": "string" } },
+        "escalation_path_needed": { "type": "array", "items": { "type": "string" } },
+        "inferred": { "type": "array", "items": { "type": "string" } },
+        "conflicts": { "type": "array", "items": { "type": "string" } },
+        "insufficient_data": { "type": "array", "items": { "type": "string" } },
+        "unresolved_from_prior_run": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "next_run_recommendation": {
+      "type": "object",
+      "properties": {
+        "suggested_date": { "type": "string", "format": "date" },
+        "suggested_intent": { "type": "string" },
+        "reason": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "action_item": {
+      "type": "object",
+      "description": "Generic item used in action lists, decision queues, and POA&M entries.",
+      "properties": {
+        "item": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string" },
+        "due": { "type": "string" },
+        "due_date": { "type": "string", "format": "date" },
+        "owner": { "type": "string" },
+        "priority": { "type": "string" },
+        "spec": { "type": "string" },
+        "program": { "type": "string" },
+        "gap": { "type": ["integer", "string"] }
+      }
+    },
+    "coverage_block": {
+      "type": "object",
+      "description": "Control coverage statistics produced by the monitoring pass.",
+      "properties": {
+        "families": { "type": "array", "items": { "type": "object" } },
+        "controls": { "type": "array", "items": { "type": "object" } },
+        "total": { "type": "integer" },
+        "evidenced": { "type": "integer" },
+        "open": { "type": "integer" },
+        "not_applicable": { "type": "integer" },
+        "implemented_no_evidence": { "type": "integer" },
+        "unknown": { "type": "integer" },
+        "gap": { "type": ["integer", "string"] },
+        "closed_period": { "type": "integer" },
+        "total_active_period": { "type": "integer" },
+        "lookback_days": { "type": "integer" },
+        "windows": { "type": "array" }
+      }
+    }
+  }
+}

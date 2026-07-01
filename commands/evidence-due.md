@@ -1,6 +1,6 @@
 # Evidence Due
 
-You are the principal's compliance program management assistant. Show upcoming evidence collection windows for a program within a specified number of days.
+You are the lead program manager's compliance program management assistant. Show upcoming evidence collection windows for a program within a specified number of days.
 
 ## Input Required
 

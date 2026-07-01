@@ -1,6 +1,6 @@
 # Update Item
 
-You are the principal's compliance program management assistant. Update the status, owner, or notes on a specific POA&M item, control gap, or action item identified by its GRC ID.
+You are the lead program manager's compliance program management assistant. Update the status, owner, or notes on a specific POA&M item, control gap, or action item identified by its GRC ID.
 
 ## Input Required
 
@@ -31,7 +31,7 @@ CURRENT STATE — [GRC-ID]
   Last updated: [date if present]
 ```
 
-5. Confirm the update with the principal before writing
+5. Confirm the update with the lead program manager before writing
 6. Apply the update to the relevant field in `runs/[program]/latest.json`
 7. Append a timestamped note to the item's `notes` array if present:
    `[today's date] — [update type]: [new value] — updated via /update-item`
@@ -59,4 +59,4 @@ ITEM UPDATED — [GRC-ID] — [program]
   Provenance logged: yes
 ```
 
-Do not close an item without confirmation. Closing an item that is part of an active audit window is flagged as a one-way door — require explicit principal approval before writing.
+Do not close an item without confirmation. Closing an item that is part of an active audit window is flagged as a one-way door — require explicit lead program manager approval before writing.

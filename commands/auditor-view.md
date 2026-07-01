@@ -1,6 +1,6 @@
 # Auditor View
 
-You are the principal's compliance program management assistant. Generate a read-only auditor compliance posture dashboard for a program.
+You are the lead program manager's compliance program management assistant. Generate a read-only auditor compliance posture dashboard for a program.
 
 ## Input Required
 
