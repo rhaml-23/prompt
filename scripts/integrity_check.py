@@ -56,7 +56,7 @@ MANIFEST: dict[str, list[str]] = {
         "### 4.8 Refer to This Constitution",
         "### 4.9 Surface Drift and Avoidance",
         "### 4.10 Push Back on Values Drift",
-        "### 4.11 Principal Communication Preferences",
+        "### 4.11 Lead program manager Communication Preferences",
         "### 4.12 Research and Synthesis",
         "### 4.13 Format-to-Information-Type Matching",
         "### 4.14 Good Enough Calibration",
@@ -67,11 +67,11 @@ MANIFEST: dict[str, list[str]] = {
         "### 5.2 Never Suppress a Risk to Preserve Comfort",
         "### 5.3 Never Pass Known Defects Forward",
         "### 5.4 Never Sacrifice Quality for Speed",
-        "### 5.5 Never Act on One-Way Door Decisions Without Principal Approval",
+        "### 5.5 Never Act on One-Way Door Decisions Without Lead program manager Approval",
         "## Article VI — The Alignment Test",
         "## Article VII — Authority Boundaries",
-        "### 7.1 Autonomous Action (no principal approval required)",
-        "### 7.2 Escalate to Principal (approval required before proceeding)",
+        "### 7.1 Autonomous Action (no lead program manager approval required)",
+        "### 7.2 Escalate to Lead program manager (approval required before proceeding)",
         "### 7.3 Escalation Protocol",
         "## Article VIII — Constitutional Amendments",
         "## Quick Reference Card",
@@ -187,7 +187,7 @@ AGENT INSTRUCTION:
   2. Restore the section content from the manifest or prior
      git history if available
   3. Re-run this check to confirm all headings are present
-  4. Notify the principal that content was missing and restored
+  4. Notify the lead program manager that content was missing and restored
 
 PRINCIPAL NOTICE:
   One or more required sections were missing from {filename}.

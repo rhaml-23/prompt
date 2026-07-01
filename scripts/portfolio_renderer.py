@@ -1,421 +1,661 @@
 #!/usr/bin/env python3
-"""
-portfolio_renderer.py
+# portfolio_renderer.py
+# Purpose: Generate ui/portfolio.html from data/portfolio/latest.json using the
+#          62443 gold-standard light-theme design system.
+#
+# Args:  --data [path]    (default: data/portfolio/latest.json)
+#        --output [path]  (default: ui/portfolio.html)
+#        --public [path]  (default: public/)  — used to build live links
+#
+# Governed by: config/constitution.md + functions/program-dashboard-spec.md
+# Quality gate: IV.1 no fabrication, IV.2 protect downstream, IV.4 surface uncertainty
+#
+# Dependencies: Standard library only.
+# Repo path: scripts/portfolio_renderer.py
 
-Purpose: Read data/portfolio/latest.json and render ui/portfolio.html —
-         a cross-program portfolio dashboard showing health, decisions,
-         blockers, escalations, and cross-program signals.
-
-Usage:
-  python scripts/portfolio_renderer.py
-  python scripts/portfolio_renderer.py --portfolio data/portfolio/latest.json
-  python scripts/portfolio_renderer.py --output ui/portfolio.html
-  python scripts/portfolio_renderer.py --open
-
-Dependencies: None beyond Python standard library
-Repo path: /scripts/portfolio_renderer.py
-Standards: PEP 8, type hints, argparse, standard library only
-"""
+"""Portfolio briefing page renderer — 62443 light-theme design system."""
 
 import argparse
 import json
-import os
-import subprocess
 import sys
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
-from typing import Any
-
-# ── Constants ────────────────────────────────────────────────────────────────
-
-DEFAULT_PORTFOLIO = "data/portfolio/latest.json"
-DEFAULT_OUTPUT = "ui/portfolio.html"
-
-HEALTH_CONFIG = {
-    "red":    {"icon": "🔴", "label": "Red",    "color": "#c0392b", "bg": "#fdf2f2"},
-    "yellow": {"icon": "🟡", "label": "Yellow", "color": "#d68910", "bg": "#fefdf0"},
-    "green":  {"icon": "🟢", "label": "Green",  "color": "#1e8449", "bg": "#f2fdf4"},
-}
-
-URGENCY_COLOR = {
-    "high":   "#c0392b",
-    "medium": "#d68910",
-    "low":    "#555555",
-}
-
-SEVERITY_COLOR = {
-    "critical": "#c0392b",
-    "high":     "#e67e22",
-}
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# HTML escaping
+# ---------------------------------------------------------------------------
 
-def load_portfolio(path: str) -> dict[str, Any]:
-    p = Path(path)
-    if not p.exists():
-        print(f"[ERROR] Portfolio file not found: {path}", file=sys.stderr)
-        print("Run 'BEGIN PORTFOLIO RUN' in your LLM interface first.", file=sys.stderr)
-        sys.exit(1)
-    with open(p) as f:
-        return json.load(f)
-
-
-def days_label(days: int) -> str:
-    return f"{days}d" if days != 1 else "1d"
-
-
-def escape(text: str) -> str:
-    return (str(text)
+def e(s: object) -> str:
+    return (str(s)
             .replace("&", "&amp;")
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace('"', "&quot;"))
 
 
-def badge(text: str, color: str, bg: str = "#f0f0f0") -> str:
-    return (f'<span style="background:{bg};color:{color};padding:2px 8px;'
-            f'border-radius:4px;font-size:0.78em;font-weight:600">'
-            f'{escape(text)}</span>')
+# ---------------------------------------------------------------------------
+# Core CSS (same design system as program_dashboard_renderer)
+# ---------------------------------------------------------------------------
 
-
-def section_header(title: str) -> str:
-    return (f'<div style="font-size:0.7em;font-weight:700;letter-spacing:0.08em;'
-            f'color:#888;text-transform:uppercase;margin:24px 0 8px">{title}</div>')
-
-
-# ── Per-program card ─────────────────────────────────────────────────────────
-
-def render_program_card(prog: dict[str, Any]) -> str:
-    health = prog.get("health", "green")
-    cfg = HEALTH_CONFIG.get(health, HEALTH_CONFIG["green"])
-    slug = escape(prog.get("slug", "unknown"))
-    display = escape(prog.get("display_name", slug))
-    reason = escape(prog.get("health_reason", ""))
-    phase = escape(prog.get("phase", "—"))
-    framework = escape(prog.get("framework", "—"))
-    last_run = escape(prog.get("last_run", "—"))
-    next_due = escape(prog.get("next_run_due", "—"))
-    staleness = prog.get("run_staleness_days", 0)
-    top_risk = escape(prog.get("top_risk", "—"))
-    drafts = prog.get("drafts_staged", 0)
-    intel = prog.get("intel_items_pending", 0)
-    nearest_dl = escape(prog.get("nearest_deadline", ""))
-    nearest_dl_item = escape(prog.get("nearest_deadline_item", ""))
-
-    # card border color
-    border = cfg["color"]
-    is_expanded = health == "red"
-
-    html = f"""
-<div style="border-left:4px solid {border};background:{cfg['bg']};
-     border-radius:6px;padding:16px 20px;margin-bottom:12px">
-
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-    <div>
-      <span style="font-size:1.05em;font-weight:700;color:#1a1a1a">{cfg['icon']} {display}</span>
-      <span style="font-size:0.8em;color:#666;margin-left:10px">{slug}</span>
-    </div>
-    {badge(cfg['label'], cfg['color'])}
-  </div>
+CSS = """\
+    :root {
+      --bg: #f1f5f9; --surface: #ffffff; --surface-2: #f8fafc;
+      --border: #e2e8f0; --text: #0f172a; --text-muted: #64748b;
+      --text-light: #94a3b8; --primary: #0891b2; --primary-light: #cffafe;
+      --critical: #dc2626; --critical-light: #fee2e2;
+      --high: #ea580c; --high-light: #ffedd5;
+      --medium: #ca8a04; --medium-light: #fef9c3;
+      --low: #16a34a; --low-light: #dcfce7;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --radius: 10px; --radius-sm: 6px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter',
+           system-ui, sans-serif; background: var(--bg); color: var(--text);
+           font-size: 14px; line-height: 1.5; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .header { background: #0c1a2e; color: #fff; padding: 0 32px;
+              display: flex; align-items: center; justify-content: space-between;
+              height: 64px; position: sticky; top: 0; z-index: 100;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-logo { width: 38px; height: 38px;
+                   background: linear-gradient(135deg, #0891b2, #0e7490);
+                   border-radius: 8px; display: flex; align-items: center;
+                   justify-content: center; font-size: 13px; font-weight: 800;
+                   color: #fff; flex-shrink: 0; }
+    .header-title { font-size: 15px; font-weight: 700; color: #f1f5f9; }
+    .header-subtitle { font-size: 11px; color: #64748b; margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 20px; }
+    .run-meta { text-align: right; }
+    .run-meta .label { font-size: 10px; color: #475569; text-transform: uppercase; }
+    .run-meta .value { font-size: 12px; color: #cbd5e1; font-weight: 500; }
+    .main { padding: 28px 32px; max-width: 1440px; margin: 0 auto; }
+    .stats-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 14px;
+                 margin-bottom: 24px; }
+    @media (max-width:1200px) { .stats-row { grid-template-columns: repeat(3,1fr); } }
+    @media (max-width:700px)  { .stats-row { grid-template-columns: repeat(2,1fr); } }
+    .stat-card { background: var(--surface); border: 1px solid var(--border);
+                 border-radius: var(--radius); padding: 18px 20px;
+                 box-shadow: var(--shadow-sm); }
+    .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase;
+                  letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 8px; }
+    .stat-value { font-size: 34px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .stat-sub { font-size: 11px; color: var(--text-muted); }
+    .stat-card.critical .stat-value { color: var(--critical); }
+    .stat-card.warning  .stat-value { color: var(--high); }
+    .stat-card.info     .stat-value { color: var(--primary); }
+    .stat-card.neutral  .stat-value { color: var(--text); }
+    .stat-card.ok       .stat-value { color: var(--low); }
+    .stat-bar { height: 3px; border-radius: 2px; margin-top: 10px;
+                background: var(--border); overflow: hidden; }
+    .stat-bar-fill { height: 100%; border-radius: 2px; }
+    .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: 0.8px; color: var(--text-muted);
+                     margin: 24px 0 12px; display: flex; align-items: center; gap: 10px; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .program-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr));
+                    gap: 16px; margin-bottom: 24px; }
+    .program-card { background: var(--surface); border: 1px solid var(--border);
+                    border-radius: var(--radius); box-shadow: var(--shadow-sm);
+                    overflow: hidden; display: flex; flex-direction: column; }
+    .program-card-header { padding: 14px 18px; background: #0c1a2e; color: #fff;
+                           display: flex; align-items: center; gap: 10px; }
+    .prog-logo { width: 32px; height: 32px; border-radius: 6px;
+                 background: linear-gradient(135deg, #0891b2, #0e7490);
+                 display: flex; align-items: center; justify-content: center;
+                 font-size: 11px; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .prog-name { font-size: 13px; font-weight: 700; color: #f1f5f9; }
+    .prog-slug { font-size: 10px; color: #64748b; margin-top: 1px; font-family: monospace; }
+    .health-pill { margin-left: auto; font-size: 10px; font-weight: 700; padding: 3px 9px;
+                   border-radius: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .health-pill.yellow { background: #78350f; color: #fde68a; }
+    .health-pill.red    { background: #7f1d1d; color: #fecaca; }
+    .health-pill.green  { background: #14532d; color: #bbf7d0; }
+    .health-pill.unknown{ background: #1e293b; color: #94a3b8; }
+    .program-card-body { padding: 14px 18px; flex: 1; }
+    .prog-status { font-size: 12px; color: var(--text); line-height: 1.5; margin-bottom: 12px; }
+    .prog-kpi-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .prog-kpi { font-size: 11px; padding: 3px 8px; border-radius: 8px;
+                font-weight: 600; }
+    .prog-kpi.critical { background: var(--critical-light); color: var(--critical); }
+    .prog-kpi.warn     { background: var(--high-light); color: var(--high); }
+    .prog-kpi.info     { background: var(--primary-light); color: var(--primary); }
+    .prog-kpi.neutral  { background: var(--surface-2); color: var(--text-muted);
+                          border: 1px solid var(--border); }
+    .prog-frameworks { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+    .fw-tag { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px;
+              text-transform: uppercase; letter-spacing: 0.3px;
+              background: var(--primary-light); color: #0e7490; }
+    .prog-links { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 10px;
+                  border-top: 1px solid var(--border); }
+    .prog-link { font-size: 11px; font-weight: 600; padding: 4px 10px;
+                 border-radius: 8px; background: #0c1a2e; color: #93c5fd;
+                 display: inline-flex; align-items: center; gap: 4px; }
+    .prog-link:hover { background: #1e3a5f; }
+    .prog-link.auditor { background: #1e293b; color: #a5f3fc; }
+    .prog-link.auditor:hover { background: #0f2a3f; }
+    .prog-link.unavailable { background: var(--surface-2); color: var(--text-light);
+                              border: 1px solid var(--border); cursor: default; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+               margin-bottom: 20px; }
+    @media (max-width:900px) { .grid-2 { grid-template-columns: 1fr; } }
+    .card { background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .card-header { padding: 13px 20px; border-bottom: 1px solid var(--border);
+                   display: flex; align-items: center; justify-content: space-between;
+                   background: var(--surface-2); }
+    .card-title { font-size: 12px; font-weight: 700; color: var(--text);
+                  text-transform: uppercase; letter-spacing: 0.4px; }
+    .card-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+                  background: var(--primary-light); color: var(--primary); }
+    .card-badge.warn { background: var(--critical-light); color: var(--critical); }
+    .card-body { padding: 20px; }
+    .signal-item { padding: 10px 14px; border-radius: var(--radius-sm);
+                   border: 1px solid var(--border); background: var(--surface-2);
+                   margin-bottom: 8px; }
+    .signal-item:last-child { margin-bottom: 0; }
+    .signal-label { font-size: 11px; font-weight: 700; color: var(--text);
+                    margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+    .signal-label .badge { font-size: 9px; font-weight: 700; padding: 1px 5px;
+                           border-radius: 6px; }
+    .signal-label .badge.warn { background: var(--high-light); color: var(--high); }
+    .signal-label .badge.info { background: var(--primary-light); color: var(--primary); }
+    .signal-note { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+    .action-item { padding: 12px 16px; border-radius: var(--radius-sm);
+                   border: 1px solid; margin-bottom: 8px; }
+    .action-item.high { background: var(--critical-light); border-color: #fca5a5; }
+    .action-item.medium { background: var(--medium-light); border-color: #fde047; }
+    .action-item.low { background: var(--low-light); border-color: #86efac; }
+    .action-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .action-prog { font-size: 10px; font-weight: 700; font-family: monospace;
+                   color: var(--text-muted); background: var(--surface);
+                   padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+    .action-urgency { font-size: 10px; font-weight: 700; text-transform: uppercase;
+                      letter-spacing: 0.3px; }
+    .action-urgency.high   { color: var(--critical); }
+    .action-urgency.medium { color: var(--medium); }
+    .action-urgency.low    { color: var(--low); }
+    .action-text { font-size: 12px; line-height: 1.5; }
+    .action-rationale { font-size: 11px; color: var(--text-muted); margin-top: 4px;
+                        line-height: 1.4; }
+    .stale-notice { background: #fef9c3; border: 1px solid #fde047; border-left: 4px solid #ca8a04;
+                    border-radius: var(--radius); padding: 12px 20px; margin-bottom: 20px;
+                    font-size: 12px; color: #78350f; }
+    footer { text-align: center; font-size: 11px; color: var(--text-light);
+             padding: 20px 32px 32px; }
 """
 
-    if reason:
-        html += f'<div style="font-size:0.85em;color:{border};margin-bottom:8px">{reason}</div>\n'
 
-    # meta row
-    meta_items = [f"Phase: {phase}", f"Framework: {framework}",
-                  f"Last run: {last_run}", f"Next due: {next_due}"]
-    if staleness > 0:
-        meta_items.append(badge(f"Stale {days_label(staleness)}", "#c0392b", "#fdf2f2"))
-    html += ('<div style="font-size:0.78em;color:#555;margin-bottom:10px">'
-             + " &nbsp;|&nbsp; ".join(meta_items) + "</div>\n")
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-    if is_expanded:
-        # Decision queue
-        decisions = prog.get("decision_queue", [])
-        if decisions:
-            html += section_header(f"Decisions Needed ({len(decisions)})")
-            for d in decisions:
-                urgency = d.get("urgency", "medium")
-                color = URGENCY_COLOR.get(urgency, "#555")
-                age = days_label(d.get("age_days", 0))
-                html += (f'<div style="padding:4px 0;font-size:0.85em">'
-                         f'<span style="color:{color}">→</span> '
-                         f'{escape(d.get("item",""))} '
-                         f'<span style="color:#aaa;font-size:0.85em">{age}</span></div>\n')
-
-        # Blockers
-        blockers = prog.get("blockers", [])
-        if blockers:
-            html += section_header(f"Blockers ({len(blockers)})")
-            for b in blockers:
-                owner = escape(b.get("owner", "OWNER NEEDED"))
-                owner_color = "#c0392b" if "NEEDED" in owner else "#333"
-                age = days_label(b.get("age_days", 0))
-                html += (f'<div style="padding:4px 0;font-size:0.85em">'
-                         f'<span style="color:#c0392b">→</span> '
-                         f'{escape(b.get("item",""))} '
-                         f'— <span style="color:{owner_color};font-weight:600">{owner}</span> '
-                         f'<span style="color:#aaa;font-size:0.85em">{age}</span></div>\n')
-
-        # Escalations
-        escalations = prog.get("escalations", [])
-        if escalations:
-            html += section_header(f"Escalations ({len(escalations)})")
-            for e in escalations:
-                sev = e.get("severity", "high")
-                color = SEVERITY_COLOR.get(sev, "#c0392b")
-                age = days_label(e.get("age_days", 0))
-                html += (f'<div style="padding:4px 0;font-size:0.85em">'
-                         f'<span style="color:{color};font-weight:700">⚠ </span>'
-                         f'{escape(e.get("item",""))} '
-                         f'{badge(sev, color)} '
-                         f'<span style="color:#aaa;font-size:0.85em">{age}</span></div>\n')
-    else:
-        # Yellow/green: compact summary
-        decisions = prog.get("decision_queue", [])
-        blockers = prog.get("blockers", [])
-        if decisions:
-            top = decisions[0]
-            age = days_label(top.get("age_days", 0))
-            html += (f'<div style="font-size:0.82em;color:#555;margin-bottom:4px">'
-                     f'Top decision: {escape(top.get("item",""))} '
-                     f'<span style="color:#aaa">{age}</span></div>\n')
-        if blockers:
-            top = blockers[0]
-            html += (f'<div style="font-size:0.82em;color:#555;margin-bottom:4px">'
-                     f'Blocker: {escape(top.get("item",""))}</div>\n')
-
-    # Footer row — always shown
-    footer_parts = []
-    if top_risk and top_risk != "—":
-        footer_parts.append(f'<span style="color:#555">Risk: {top_risk}</span>')
-    if nearest_dl:
-        footer_parts.append(f'<span style="color:#c0392b">Deadline: {nearest_dl_item} — {nearest_dl}</span>')
-    if drafts:
-        footer_parts.append(badge(f"{drafts} draft{'s' if drafts > 1 else ''} staged", "#1a6e9e"))
-    if intel:
-        footer_parts.append(badge(f"{intel} intel pending", "#6c3483"))
-
-    if footer_parts:
-        html += ('<div style="margin-top:10px;font-size:0.78em;border-top:1px solid #ddd;'
-                 f'padding-top:8px">' + " &nbsp;·&nbsp; ".join(footer_parts) + "</div>\n")
-
-    html += "</div>\n"
-    return html
+def _health_pill(health: str) -> str:
+    labels = {"yellow": "Yellow", "red": "Red", "green": "Green", "unknown": "Unknown"}
+    cls = health.lower() if health.lower() in labels else "unknown"
+    lbl = labels.get(cls, health.title())
+    return f'<span class="health-pill {cls}">{lbl}</span>'
 
 
-# ── Cross-program signals ────────────────────────────────────────────────────
+def _fw_tags(frameworks: list) -> str:
+    tags = ""
+    for fw in frameworks[:3]:
+        if isinstance(fw, dict):
+            fw = fw.get("name", str(fw))
+        short = str(fw)[:30]
+        tags += f'<span class="fw-tag">{e(short)}</span>'
+    return f'<div class="prog-frameworks">{tags}</div>' if tags else ""
 
-def render_cross_program(cp: dict[str, Any]) -> str:
-    html = ""
 
-    def signal_rows(items: list, label_key: str, detail_key: str, color: str) -> str:
-        if not items:
-            return ""
+def _prog_logo(slug: str) -> str:
+    words = slug.replace("-", " ").split()
+    initials = "".join(w[0] for w in words)[:3].upper()
+    return f'<div class="prog-logo">{e(initials)}</div>'
+
+
+def _lookup_program_name(slug: str, runs_dir: Path) -> str:
+    """Try to get program_name from runs/[slug]/latest.json."""
+    path = runs_dir / slug / "latest.json"
+    if path.exists():
+        try:
+            with path.open(encoding="utf-8") as f:
+                run = json.load(f)
+            return (run.get("program_name")
+                    or (run.get("run_manifest") or {}).get("program_name")
+                    or slug)
+        except Exception:
+            pass
+    return slug
+
+
+def _dashboard_url(slug: str, public_dir: Path) -> str | None:
+    # Return path relative to public/ (the GitLab Pages root)
+    p = public_dir / slug / "index.html"
+    if p.exists():
+        return f"{slug}/index.html"
+    p2 = Path("runs") / slug / "dashboard.html"
+    if p2.exists():
+        return f"runs/{slug}/dashboard.html"
+    return None
+
+
+def _auditor_url(slug: str, public_dir: Path, today: str) -> str | None:
+    # Auditor views now live directly in public/auditor/ — return path relative to public/
+    auditor_dir = public_dir / "auditor"
+    for f in sorted(auditor_dir.glob(f"{slug}-auditor-*.html"), reverse=True):
+        return f"auditor/{f.name}"
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Section renderers
+# ---------------------------------------------------------------------------
+
+def render_header(portfolio: dict, today: str) -> str:
+    ph = portfolio.get("portfolio_health") or {}
+    gen_at = portfolio.get("generated_at") or today
+    total = ph.get("total_programs") or len(portfolio.get("programs") or [])
+    green = ph.get("green") or 0
+    yellow = ph.get("yellow") or 0
+    red = ph.get("red") or 0
+    health = ("red" if red > 0 else "yellow" if yellow > 0 else "green")
+    health_labels = {"red": "Red", "yellow": "Yellow", "green": "Green"}
+    health_label = health_labels[health]
+    health_colors = {
+        "red": ("background: #7f1d1d; color: #fecaca;"),
+        "yellow": ("background: #78350f; color: #fde68a;"),
+        "green": ("background: #14532d; color: #bbf7d0;"),
+    }
+    style = health_colors[health]
+    return f"""<header class="header">
+  <div class="header-left">
+    <div class="header-logo">P</div>
+    <div>
+      <div class="header-title">Compliance Program Portfolio</div>
+      <div class="header-subtitle">{total} active programs &nbsp;·&nbsp; {green} green &nbsp;·&nbsp; {yellow} yellow &nbsp;·&nbsp; {red} red</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;{style}">
+      <div style="width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite;"></div>
+      {health_label}
+    </div>
+    <div class="run-meta">
+      <div class="label">Portfolio updated</div>
+      <div class="value">{e(gen_at)}</div>
+    </div>
+  </div>
+</header>
+<style>@keyframes pulse {{ 0%, 100% {{ opacity:1; }} 50% {{ opacity:0.35; }} }}</style>"""
+
+
+def render_kpi_strip(portfolio: dict) -> str:
+    ph = portfolio.get("portfolio_health") or {}
+    total = int(ph.get("total_programs") or 0)
+    red = int(ph.get("red") or 0)
+    yellow = int(ph.get("yellow") or 0)
+    green = int(ph.get("green") or 0)
+    decisions = int(ph.get("total_open_decisions") or 0)
+    blockers = int(ph.get("total_blockers") or 0)
+    escalations = int(ph.get("total_escalations") or 0)
+
+    return f"""<div class="stats-row">
+  <div class="stat-card ok">
+    <div class="stat-label">Green Programs</div>
+    <div class="stat-value">{green}</div>
+    <div class="stat-sub">of {total} total</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:{int(green/max(total,1)*100)}%;background:var(--low)"></div></div>
+  </div>
+  <div class="stat-card{'  warning' if yellow > 0 else ''}">
+    <div class="stat-label">Yellow Programs</div>
+    <div class="stat-value">{yellow}</div>
+    <div class="stat-sub">Active / in-flight</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:{int(yellow/max(total,1)*100)}%;background:var(--high)"></div></div>
+  </div>
+  <div class="stat-card{'  critical' if red > 0 else ''}">
+    <div class="stat-label">Red Programs</div>
+    <div class="stat-value">{red}</div>
+    <div class="stat-sub">Require escalation</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:{int(red/max(total,1)*100)}%;background:var(--critical)"></div></div>
+  </div>
+  <div class="stat-card info">
+    <div class="stat-label">Open Decisions</div>
+    <div class="stat-value">{decisions}</div>
+    <div class="stat-sub">Across all programs</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:60%;background:var(--primary)"></div></div>
+  </div>
+  <div class="stat-card{'  warning' if blockers > 0 else ' neutral'}">
+    <div class="stat-label">Blockers</div>
+    <div class="stat-value">{blockers}</div>
+    <div class="stat-sub">Active certification blockers</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:{min(100, blockers*15)}%;background:var(--high)"></div></div>
+  </div>
+  <div class="stat-card{'  critical' if escalations > 0 else ' neutral'}">
+    <div class="stat-label">Escalations</div>
+    <div class="stat-value">{escalations}</div>
+    <div class="stat-sub">Need immediate action</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:{min(100, escalations*30)}%;background:var(--critical)"></div></div>
+  </div>
+</div>"""
+
+
+def render_program_cards(portfolio: dict, public_dir: Path) -> str:
+    programs = portfolio.get("programs") or []
+    today = date.today().isoformat()
+    cards = ""
+    for prog in programs:
+        slug = prog.get("program_slug") or prog.get("slug") or ""
+        name = (prog.get("program_name")
+                or prog.get("display_name")
+                or _lookup_program_name(slug, Path("runs"))
+                or slug)
+        health = (prog.get("health") or "unknown").lower()
+        status = e(prog.get("one_line_status") or "")
+        phase = e(prog.get("phase") or "")
+        frameworks = prog.get("frameworks") or []
+        if not frameworks and prog.get("framework"):
+            frameworks = [prog.get("framework")]
+        fws = _fw_tags(frameworks)
+        decisions = int(prog.get("open_decision_count")
+                        or len(prog.get("decision_queue") or [])
+                        or 0)
+        blockers = int(prog.get("blocker_count")
+                       or len(prog.get("blockers") or [])
+                       or 0)
+        escalations = int(prog.get("escalation_count")
+                          or len(prog.get("escalations") or [])
+                          or 0)
+        owner_gaps = int(prog.get("owner_gap_count") or 0)
+        vendors = prog.get("vendors") or []
+        last_run = e(prog.get("last_run_date") or prog.get("last_run") or "")
+
+        logo = _prog_logo(slug)
+        pill = _health_pill(health)
+
+        # KPI chips
+        kpis = ""
+        if escalations > 0:
+            kpis += f'<span class="prog-kpi critical">{escalations} escalation{"s" if escalations != 1 else ""}</span>'
+        if blockers > 0:
+            kpis += f'<span class="prog-kpi warn">{blockers} blocker{"s" if blockers != 1 else ""}</span>'
+        if decisions > 0:
+            kpis += f'<span class="prog-kpi info">{decisions} decision{"s" if decisions != 1 else ""}</span>'
+        if owner_gaps > 0:
+            kpis += f'<span class="prog-kpi neutral">{owner_gaps} owner gap{"s" if owner_gaps != 1 else ""}</span>'
+        if phase:
+            kpis += f'<span class="prog-kpi neutral">{phase}</span>'
+        kpi_row = f'<div class="prog-kpi-row">{kpis}</div>' if kpis else ""
+
+        # Vendor
+        vendor_html = ""
+        for v in vendors[:1]:
+            if isinstance(v, dict):
+                vname = e(v.get("name") or "")
+                vscore = v.get("score")
+                vtrend = e(v.get("trend") or "")
+                if vname or vscore:
+                    score_txt = f" {vscore}/5 · {vtrend}" if vscore else ""
+                    vendor_html = f'<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Vendor: <strong style="color:var(--text)">{vname}</strong>{score_txt}</div>'
+
+        # Links
+        dash_url = _dashboard_url(slug, public_dir)
+        aud_url = _auditor_url(slug, public_dir, today)
+
+        if dash_url:
+            dash_link = f'<a class="prog-link" href="{e(dash_url)}">📊 Program Dashboard</a>'
+        else:
+            dash_link = '<span class="prog-link unavailable">Dashboard not generated</span>'
+
+        if aud_url:
+            aud_link = f'<a class="prog-link auditor" href="{e(aud_url)}">🔍 Auditor View</a>'
+        else:
+            aud_link = '<span class="prog-link unavailable auditor" style="color:var(--text-light)">Auditor view not generated</span>'
+
+        cards += f"""<div class="program-card">
+  <div class="program-card-header">
+    {logo}
+    <div>
+      <div class="prog-name">{e(name)}</div>
+      <div class="prog-slug">{e(slug)}</div>
+    </div>
+    {pill}
+  </div>
+  <div class="program-card-body">
+    {"<div class='prog-status'>" + status + "</div>" if status else ""}
+    {kpi_row}
+    {fws}
+    {vendor_html}
+    {"<div style='font-size:11px;color:var(--text-muted);margin-bottom:10px;'>Last run: " + last_run + "</div>" if last_run else ""}
+    <div class="prog-links">{dash_link}{aud_link}</div>
+  </div>
+</div>"""
+
+    return f"""<div class="section-label">Active Programs</div>
+<div class="program-grid">{cards}</div>"""
+
+
+def render_signals(portfolio: dict) -> str:
+    cs = portfolio.get("cross_program_signals") or {}
+    sections = []
+
+    # Deadline clustering
+    clustering = cs.get("deadline_clustering") or []
+    if clustering:
         rows = ""
-        for item in items:
-            label = escape(item.get(label_key, ""))
-            detail = escape(item.get(detail_key, ""))
-            rows += (f'<div style="padding:4px 0;font-size:0.85em">'
-                     f'<span style="color:{color}">→</span> '
-                     f'<strong>{label}</strong> — {detail}</div>\n')
-        return rows
+        for cluster in clustering:
+            date_range = e(cluster.get("date_range") or "")
+            progs = cluster.get("programs") or []
+            note = e(cluster.get("note") or "")
+            prog_badges = " ".join(
+                f'<code style="font-size:10px;padding:1px 5px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">{e(p)}</code>'
+                for p in progs
+            )
+            rows += f"""<div class="signal-item">
+  <div class="signal-label">
+    <strong>{date_range}</strong> &nbsp; {prog_badges}
+    <span class="badge warn">{len(progs)} program{"s" if len(progs)!=1 else ""}</span>
+  </div>
+  <div class="signal-note">{note}</div>
+</div>"""
+        sections.append(("Deadline Clustering", rows, f"{len(clustering)} clusters"))
 
-    deadlines = cp.get("near_term_deadlines", [])
-    if deadlines:
-        html += section_header("Near-term Deadlines (14 days)")
-        for d in deadlines:
-            html += (f'<div style="padding:4px 0;font-size:0.85em">'
-                     f'<span style="color:#c0392b">→</span> '
-                     f'{escape(d.get("date",""))} — {escape(d.get("item",""))} '
-                     f'— <em>{escape(d.get("program",""))}</em></div>\n')
-
-    vendors = cp.get("shared_vendors_at_risk", [])
-    if vendors:
-        html += section_header("Shared Vendor Risk")
-        for v in vendors:
-            programs = ", ".join(v.get("programs", []))
-            html += (f'<div style="padding:4px 0;font-size:0.85em">'
-                     f'<span style="color:#e67e22">→</span> '
-                     f'<strong>{escape(v.get("vendor",""))}</strong> — {escape(programs)}</div>\n')
-
-    contention = cp.get("resource_contention", [])
+    # Resource contention
+    contention = cs.get("resource_contention") or []
     if contention:
-        html += section_header("Resource Contention")
+        rows = ""
         for c in contention:
-            programs = ", ".join(c.get("programs", []))
-            html += (f'<div style="padding:4px 0;font-size:0.85em">'
-                     f'<span style="color:#d68910">→</span> '
-                     f'<strong>{escape(c.get("owner",""))}</strong> — open items in: {escape(programs)}</div>\n')
+            resource = e(c.get("resource") or "")
+            progs = c.get("programs") or []
+            note = e(c.get("note") or "")
+            prog_badges = " ".join(
+                f'<code style="font-size:10px;padding:1px 5px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">{e(p)}</code>'
+                for p in progs
+            )
+            rows += f"""<div class="signal-item">
+  <div class="signal-label">
+    <strong>{resource}</strong> &nbsp; {prog_badges}
+    <span class="badge info">{len(progs)} programs</span>
+  </div>
+  <div class="signal-note">{note}</div>
+</div>"""
+        sections.append(("Resource Contention", rows, f"{len(contention)} resources"))
 
-    intel = cp.get("intel_overlap", [])
+    # Intel overlap
+    intel = cs.get("intel_overlap") or []
     if intel:
-        html += section_header("Intel Overlap")
-        for i in intel:
-            programs = ", ".join(i.get("programs", []))
-            html += (f'<div style="padding:4px 0;font-size:0.85em">'
-                     f'<span style="color:#6c3483">→</span> '
-                     f'{escape(i.get("finding",""))} — {escape(programs)}</div>\n')
+        rows = ""
+        for it in intel[:5]:
+            title = e(it.get("title") or it.get("signal") or str(it)[:60])
+            progs = it.get("programs") or []
+            prog_badges = " ".join(
+                f'<code style="font-size:10px;padding:1px 5px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">{e(p)}</code>'
+                for p in progs
+            )
+            rows += f"""<div class="signal-item">
+  <div class="signal-label">{title} &nbsp; {prog_badges}</div>
+</div>"""
+        sections.append(("Intel Overlap", rows, f"{len(intel)} signals"))
 
-    return html
-
-
-# ── Suggested actions ────────────────────────────────────────────────────────
-
-def render_suggested_actions(portfolio: dict[str, Any]) -> str:
-    actions = []
-    for prog in portfolio.get("programs", []):
-        if prog.get("health") == "red":
-            for esc in prog.get("escalations", []):
-                actions.append({
-                    "text": f'[{prog["slug"]}] Resolve escalation: {esc.get("item","")}',
-                    "age": esc.get("age_days", 0),
-                    "priority": 0
-                })
-            for dec in prog.get("decision_queue", []):
-                if dec.get("urgency") == "high":
-                    actions.append({
-                        "text": f'[{prog["slug"]}] Decision needed: {dec.get("item","")}',
-                        "age": dec.get("age_days", 0),
-                        "priority": 1
-                    })
-
-    actions.sort(key=lambda x: (x["priority"], -x["age"]))
-    actions = actions[:3]
-
-    if not actions:
+    if not sections:
         return ""
 
-    html = section_header("Suggested First Actions")
-    for i, action in enumerate(actions, 1):
-        html += (f'<div style="padding:6px 0;font-size:0.88em">'
-                 f'<strong>{i}.</strong> {escape(action["text"])}</div>\n')
+    html = '<div class="section-label">Cross-Program Signals</div><div class="grid-2">'
+    for title, content, badge in sections[:2]:
+        html += f"""<div class="card">
+  <div class="card-header">
+    <div class="card-title">{title}</div>
+    <div class="card-badge">{badge}</div>
+  </div>
+  <div class="card-body">{content}</div>
+</div>"""
+    html += "</div>"
+
+    if len(sections) > 2:
+        html += '<div class="grid-2" style="margin-top:-12px;">'
+        for title, content, badge in sections[2:4]:
+            html += f"""<div class="card">
+  <div class="card-header">
+    <div class="card-title">{title}</div>
+    <div class="card-badge">{badge}</div>
+  </div>
+  <div class="card-body">{content}</div>
+</div>"""
+        html += "</div>"
+
     return html
 
 
-# ── Full page ────────────────────────────────────────────────────────────────
+def render_suggested_actions(portfolio: dict) -> str:
+    actions = portfolio.get("suggested_actions") or []
+    if not actions:
+        return ""
+    rows = ""
+    for act in actions:
+        if not isinstance(act, dict):
+            continue
+        prog = e(act.get("program") or "")
+        urgency = str(act.get("urgency") or "medium").lower()
+        text = e(act.get("action") or "")
+        rationale = e(act.get("rationale") or "")
+        rows += f"""<div class="action-item {urgency}">
+  <div class="action-header">
+    {"<span class='action-prog'>" + prog + "</span>" if prog else ""}
+    <span class="action-urgency {urgency}">{urgency.upper()}</span>
+  </div>
+  <div class="action-text">{text}</div>
+  {"<div class='action-rationale'>" + rationale + "</div>" if rationale else ""}
+</div>"""
 
-def render_html(portfolio: dict[str, Any]) -> str:
-    summary = portfolio.get("summary", {})
-    generated = escape(portfolio.get("generated", str(date.today())))
-    total = summary.get("total_programs", 0)
-    red = summary.get("red", 0)
-    yellow = summary.get("yellow", 0)
-    green = summary.get("green", 0)
-    total_decisions = summary.get("total_decisions_pending", 0)
-    total_blockers = summary.get("total_blockers", 0)
-    total_escalations = summary.get("total_escalations", 0)
-    nearest_dl = escape(summary.get("nearest_deadline", ""))
-    nearest_dl_prog = escape(summary.get("nearest_deadline_program", ""))
+    return f"""<div class="section-label">Suggested Actions</div>
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-header">
+    <div class="card-title">Recommended Next Steps</div>
+    <div class="card-badge{"" if all(str((a.get("urgency") or "")).lower() != "high" for a in actions) else " warn"}">{len(actions)} actions</div>
+  </div>
+  <div class="card-body">{rows}</div>
+</div>"""
 
-    programs_html = "".join(render_program_card(p) for p in portfolio.get("programs", []))
-    cross_html = render_cross_program(portfolio.get("cross_program", {}))
-    actions_html = render_suggested_actions(portfolio)
 
-    stat_box = lambda label, value, color="#1a1a1a": (
-        f'<div style="text-align:center;padding:12px 20px">'
-        f'<div style="font-size:1.8em;font-weight:700;color:{color}">{value}</div>'
-        f'<div style="font-size:0.72em;color:#888;text-transform:uppercase;letter-spacing:0.05em">{label}</div>'
-        f'</div>'
-    )
+def render_staleness_notice(portfolio: dict) -> str:
+    gen_at = portfolio.get("generated_at") or ""
+    if not gen_at:
+        return ""
+    try:
+        from datetime import date as ddate
+        gen = ddate.fromisoformat(gen_at.split("T")[0])
+        days = (ddate.today() - gen).days
+        if days > 14:
+            return (f'<div class="stale-notice"><strong>Note:</strong> This portfolio briefing '
+                    f'was generated from data last updated {e(gen_at)} ({days} days ago). '
+                    f'Some program data may not reflect current state.</div>')
+    except (ValueError, TypeError):
+        pass
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Top-level assembly
+# ---------------------------------------------------------------------------
+
+def generate_html(portfolio: dict, public_dir: Path) -> str:
+    today = date.today().isoformat()
+    gen_at = portfolio.get("generated_at") or today
+
+    header = render_header(portfolio, today)
+    stale = render_staleness_notice(portfolio)
+    kpi = render_kpi_strip(portfolio)
+    program_cards = render_program_cards(portfolio, public_dir)
+    signals = render_signals(portfolio)
+    actions = render_suggested_actions(portfolio)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Portfolio Briefing — {generated}</title>
-<style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-         background: #f5f5f5; color: #1a1a1a; line-height: 1.5; }}
-  .container {{ max-width: 900px; margin: 0 auto; padding: 24px 16px; }}
-  .card {{ background: #fff; border-radius: 8px; padding: 20px;
-           box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px; }}
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compliance Program Portfolio — {today}</title>
+<style>{CSS}</style>
 </head>
 <body>
-<div class="container">
 
-  <!-- Header -->
-  <div style="margin-bottom:20px">
-    <div style="font-size:1.4em;font-weight:700;color:#1a1a1a">Portfolio Briefing</div>
-    <div style="font-size:0.82em;color:#888">{generated} &nbsp;·&nbsp; {total} programs</div>
-  </div>
+{header}
 
-  <!-- Summary stats -->
-  <div class="card" style="margin-bottom:20px">
-    <div style="display:flex;flex-wrap:wrap;justify-content:space-around;border-bottom:1px solid #eee;margin-bottom:12px;padding-bottom:12px">
-      {stat_box("Red", red, "#c0392b")}
-      {stat_box("Yellow", yellow, "#d68910")}
-      {stat_box("Green", green, "#1e8449")}
-      {stat_box("Decisions", total_decisions, "#1a6e9e")}
-      {stat_box("Blockers", total_blockers, "#e67e22")}
-      {stat_box("Escalations", total_escalations, "#c0392b")}
-    </div>
-    {"<div style='font-size:0.82em;color:#c0392b'>⚑ Nearest deadline: " + nearest_dl_prog + " — " + nearest_dl + "</div>" if nearest_dl else ""}
-  </div>
+<div class="main">
 
-  <!-- Suggested actions -->
-  {"<div class='card'>" + actions_html + "</div>" if actions_html else ""}
-
-  <!-- Programs -->
-  <div class="card">
-    <div style="font-size:0.7em;font-weight:700;letter-spacing:0.08em;color:#888;
-         text-transform:uppercase;margin-bottom:16px">Programs</div>
-    {programs_html}
-  </div>
-
-  <!-- Cross-program signals -->
-  {"<div class='card'><div style='font-size:0.7em;font-weight:700;letter-spacing:0.08em;color:#888;text-transform:uppercase;margin-bottom:8px'>Cross-Program Signals</div>" + cross_html + "</div>" if cross_html.strip() else ""}
-
-  <div style="font-size:0.72em;color:#aaa;text-align:center;margin-top:16px">
-    Generated by portfolio-orchestrator v1.0 · {generated}
-  </div>
+{stale}
+{kpi}
+{program_cards}
+{signals}
+{actions}
 
 </div>
+<footer>Generated by program-pipeline · {today} · Governed by config/constitution.md</footer>
 </body>
 </html>"""
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Render portfolio state JSON to HTML dashboard"
+        description="Generate portfolio briefing HTML from data/portfolio/latest.json."
     )
-    parser.add_argument("--portfolio", default=DEFAULT_PORTFOLIO,
-                        help=f"Path to portfolio JSON (default: {DEFAULT_PORTFOLIO})")
-    parser.add_argument("--output", default=DEFAULT_OUTPUT,
-                        help=f"Output HTML path (default: {DEFAULT_OUTPUT})")
-    parser.add_argument("--open", action="store_true",
-                        help="Open dashboard in browser after rendering")
+    parser.add_argument("--data", "--portfolio", dest="data",
+                        default="data/portfolio/latest.json",
+                        help="Path to portfolio latest.json")
+    parser.add_argument("--output", default="ui/portfolio.html",
+                        help="Output HTML path (default: ui/portfolio.html)")
+    parser.add_argument("--public", default="public",
+                        help="Path to the public/ directory for link resolution")
     args = parser.parse_args()
 
-    portfolio = load_portfolio(args.portfolio)
+    data_path = Path(args.data)
+    if not data_path.exists():
+        print(f"ERROR: Portfolio data not found at {data_path}", file=sys.stderr)
+        sys.exit(1)
 
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with data_path.open(encoding="utf-8") as f:
+        portfolio = json.load(f)
 
-    html = render_html(portfolio)
-    output_path.write_text(html, encoding="utf-8")
+    public_dir = Path(args.public)
 
-    print(f"Portfolio dashboard written to: {output_path}")
+    out_path = Path(args.output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    summary = portfolio.get("summary", {})
-    print(f"  {summary.get('total_programs', 0)} programs | "
-          f"🔴 {summary.get('red', 0)} | "
-          f"🟡 {summary.get('yellow', 0)} | "
-          f"🟢 {summary.get('green', 0)}")
+    html = generate_html(portfolio, public_dir)
+    out_path.write_text(html, encoding="utf-8")
 
-    if args.open:
-        try:
-            import webbrowser
-            webbrowser.open(output_path.resolve().as_uri())
-        except Exception as e:
-            print(f"Could not open browser: {e}", file=sys.stderr)
+    ph = portfolio.get("portfolio_health") or {}
+    print(f"Portfolio briefing written to: {out_path}")
+    print(f"  Programs: {ph.get('total_programs', '?')}  "
+          f"Green: {ph.get('green', 0)}  "
+          f"Yellow: {ph.get('yellow', 0)}  "
+          f"Red: {ph.get('red', 0)}")
 
 
 if __name__ == "__main__":

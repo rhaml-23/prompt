@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: compliance-fleet
+  labels:
+    app.kubernetes.io/part-of: compliance-fleet
+    app.kubernetes.io/managed-by: compliance-fleet-ci

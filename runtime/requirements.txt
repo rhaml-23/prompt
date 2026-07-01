@@ -1,0 +1,20 @@
+# Runtime dependencies for the compliance fleet
+# Standard library only for core functionality.
+# Optional dependencies for deployed mode.
+
+# Required (used by validate_frontmatter.py fallback and runtime)
+pyyaml>=6.0
+
+# scripts/iso42001_ingest_standard_pdf.py — PDF text extraction when pdftotext unavailable
+pypdf>=4.0,<6
+
+# Testing
+pytest>=8.0
+pytest-cov>=4.0
+
+# Deployed mode (uncomment when implementing runtime/deployed.py)
+# psycopg[binary]>=3.1    # PostgreSQL state backend
+# nats-py>=2.6            # NATS message bus
+# boto3>=1.34             # S3 state backend
+# fastapi>=0.110          # Decision gate API
+# uvicorn>=0.29           # ASGI server

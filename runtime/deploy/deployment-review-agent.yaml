@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: review-agent
+  namespace: compliance-fleet
+  labels:
+    app.kubernetes.io/name: review-agent
+    app.kubernetes.io/part-of: compliance-fleet
+    app.kubernetes.io/component: agent
+    compliance-fleet/role: review
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: review-agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: review-agent
+        app.kubernetes.io/part-of: compliance-fleet
+        compliance-fleet/role: review
+    spec:
+      containers:
+        - name: review-agent
+          image: compliance-fleet/agent:latest
+          env:
+            - name: AGENT_TYPE
+              value: "review"
+          envFrom:
+            - configMapRef:
+                name: compliance-fleet-config
+            - secretRef:
+                name: compliance-fleet-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+      restartPolicy: Always

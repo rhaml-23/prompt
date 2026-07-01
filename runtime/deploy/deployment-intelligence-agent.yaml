@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intelligence-agent
+  namespace: compliance-fleet
+  labels:
+    app.kubernetes.io/name: intelligence-agent
+    app.kubernetes.io/part-of: compliance-fleet
+    app.kubernetes.io/component: agent
+    compliance-fleet/role: intelligence
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: intelligence-agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: intelligence-agent
+        app.kubernetes.io/part-of: compliance-fleet
+        compliance-fleet/role: intelligence
+    spec:
+      containers:
+        - name: intelligence-agent
+          image: compliance-fleet/agent:latest
+          env:
+            - name: AGENT_TYPE
+              value: "intelligence"
+          envFrom:
+            - configMapRef:
+                name: compliance-fleet-config
+            - secretRef:
+                name: compliance-fleet-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+      restartPolicy: Always

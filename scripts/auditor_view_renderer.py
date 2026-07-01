@@ -237,8 +237,65 @@ def render_activity_log(entries: list[dict], program: str,
                    f"Lookback window: {lookback_days} days")
 
 
+def _normalize_coverage(run: dict) -> dict:
+    """Return a normalised control_coverage dict regardless of source schema.
+
+    Schema 2.0 programs store ``control_coverage.families`` with a ``family``
+    key.  Schema 1.1 programs (62443) store ``control_coverage_matrix`` with a
+    flat ``controls`` list and a ``coverage_summary`` object.  Both are
+    normalised into the shape expected by ``render_coverage``.
+    """
+    cov = run.get("control_coverage", {})
+    if cov:
+        return cov
+
+    # 62443-style: control_coverage_matrix --------------------------------
+    ccm = run.get("control_coverage_matrix", {})
+    if not ccm:
+        return {}
+
+    cs = ccm.get("coverage_summary", {})
+    controls = ccm.get("controls", [])
+
+    # Group individual controls by their ID prefix to create family rows.
+    from collections import defaultdict
+    groups: dict[str, dict] = defaultdict(lambda: {
+        "evidenced": 0, "implemented_no_evidence": 0, "gap": 0, "not_applicable": 0,
+    })
+    status_map = {"✓": "evidenced", "~": "implemented_no_evidence", "✗": "gap"}
+    for ctrl in controls:
+        prefix = ctrl.get("control_id", "").split("-")[0] or "Other"
+        key = status_map.get(ctrl.get("status", ""), "gap")
+        groups[prefix][key] += 1
+
+    families = []
+    for prefix, counts in sorted(groups.items()):
+        total = sum(counts.values())
+        families.append({
+            "name": prefix,
+            "total": total,
+            "evidenced": counts["evidenced"],
+            "implemented_no_evidence": counts["implemented_no_evidence"],
+            "gap": counts["gap"],
+            "not_applicable": counts["not_applicable"],
+        })
+
+    return {
+        "framework": ccm.get("framework", "IEC 62443-4-2"),
+        "assessment_date": ccm.get("assessment_date", ""),
+        "families": families,
+        "totals": {
+            "total": cs.get("total_controls", 0),
+            "evidenced": cs.get("evidenced", 0),
+            "implemented_no_evidence": cs.get("implemented_no_evidence", 0),
+            "gap": cs.get("gap", 0),
+            "not_applicable": cs.get("not_applicable", 0),
+        },
+    }
+
+
 def render_coverage(run: dict) -> str:
-    coverage_data = run.get("control_coverage", {})
+    coverage_data = _normalize_coverage(run)
     if not coverage_data:
         return section(
             "Control Coverage Status",

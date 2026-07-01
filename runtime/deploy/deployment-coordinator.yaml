@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coordinator
+  namespace: compliance-fleet
+  labels:
+    app.kubernetes.io/name: coordinator
+    app.kubernetes.io/part-of: compliance-fleet
+    app.kubernetes.io/component: coordinator
+    compliance-fleet/role: coordination
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: coordinator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: coordinator
+        app.kubernetes.io/part-of: compliance-fleet
+        compliance-fleet/role: coordination
+    spec:
+      containers:
+        - name: coordinator
+          image: compliance-fleet/agent:latest
+          env:
+            - name: AGENT_TYPE
+              value: "coordinator"
+          envFrom:
+            - configMapRef:
+                name: compliance-fleet-config
+            - secretRef:
+                name: compliance-fleet-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+      restartPolicy: Always

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compliance-fleet-config
+  namespace: compliance-fleet
+  labels:
+    app.kubernetes.io/part-of: compliance-fleet
+data:
+  COMPLIANCE_RUNTIME_MODE: "deployed"
+  LOG_LEVEL: "info"
+  SCAN_CADENCE_KEV: "daily"
+  SCAN_CADENCE_REGULATORY: "weekly"
+  MEMORY_COMPRESSION_AGE_DAYS: "90"
+  TRUST_LEVEL_DEFAULT: "1"
+  CASCADE_DEPTH_MAX: "3"
+  TOKEN_BUDGET_PER_SESSION: "100000"

@@ -76,9 +76,15 @@ OUTPUT_TYPES = [
     "remediation_plan",     # vendor remediation plan
     "entropy_report",       # compliance entropy analysis
     "red_team_report",      # compliance red team report
+    "qbr_report",           # portfolio quarterly business review
     "dashboard",            # HTML program dashboard
     "script",               # generated or adapted script
     "spec",                 # a spec document itself
+    "product_evidence",     # product profile, control matrix, evidence gap from repo scan
+    "lessons_learned_report",   # post-audit lessons learned by control family
+    "corrective_action_plan",   # finding-to-action mapping with owners and target dates
+    "feed_forward_artifact",    # structured JSON consumed by next intake cycle and entropy spec
+    "program_improvement_items", # broader program improvements list (full_retrospective mode)
     "other",                # anything not covered above
 ]
 
